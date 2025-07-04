@@ -1,0 +1,26 @@
+[package]
+name = "kinesis_data_streams"
+version = "0.1.0"
+edition = "2024"
+description = "AWS Kinesis Data Streams utilities for Rust"
+readme = "README.md"
+homepage = "https://github.com/yourusername/utilities.aws-utils"
+repository = "https://github.com/yourusername/utilities.aws-utils"
+license = "MIT OR Apache-2.0"
+keywords = ["aws", "kinesis", "data-streams", "utilities"]
+categories = ["web-programming", "api-bindings"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aws-config = "1"
+aws-sdk-kinesis = "1"
+thiserror = "2"
+tracing = "0.1.41"
+uuid = { version = "1.17.0", features = ["v7"] }
+
+[dev-dependencies]
+anyhow = "1"
+env_logger = "0.11"
+mockito = "1.7.0"
+tokio = { version="1", features=["macros", "rt-multi-thread"] }
