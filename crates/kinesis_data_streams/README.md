@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = make_client(None).await;
     
     // Put a single record
-    let result = kinesis_data_stream::add_record(
+    let result = kinesis_data_streams::add_record(
         &client,
         "my-stream",
         "partition-key",
@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Send the batch
     let records = builder.build();
-    let result = kinesis_data_stream::add_records(&client, "my-stream", records).await?;
+    let result = kinesis_data_streams::add_records(&client, "my-stream", records).await?;
     
     println!("Batch sent with {} failed records", result.failed_record_count().unwrap_or(0));
     
@@ -93,8 +93,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Functions
 
 - `make_client(endpoint_url: Option<String>)` - Creates a Kinesis client with optional custom endpoint
-- `kinesis_data_stream::add_record(client, stream_name, partition_key, data)` - Puts a single record
-- `kinesis_data_stream::add_records(client, stream_name, records)` - Puts multiple records in batch
+- `kinesis_data_streams::add_record(client, stream_name, partition_key, data)` - Puts a single record
+- `kinesis_data_streams::add_records(client, stream_name, records)` - Puts multiple records in batch
 
 ### RecordsBuilder
 
@@ -144,7 +144,7 @@ use kinesis_data_streams::{make_client, kinesis_data_stream, RecordsBuilder, err
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = make_client(None).await;
     
-    match kinesis_data_stream::add_record(&client, "my-stream", "key", "data").await {
+    match kinesis_data_streams::add_record(&client, "my-stream", "key", "data").await {
         Ok(output) => println!("Success: {}", output.sequence_number()),
         Err(Error::AwsSdk(e)) => {
             // Handle AWS SDK errors (e.g., stream not found, throttling)
