@@ -1,6 +1,6 @@
 [package]
 name = "aws_utils_kinesis_data_streams"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "AWS Kinesis Data Streams utilities for Rust"
 readme = "README.md"

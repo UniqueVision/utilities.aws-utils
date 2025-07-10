@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "crates/kinesis_data_streams"
+		},
+		{
+			"path": "crates/sqs"
 		}
 	],
 	"settings": {}
