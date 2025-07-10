@@ -2,18 +2,19 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("PutItemError {0}")]
-    KinesisPutItemError(#[from] Box<aws_sdk_kinesis::operation::put_record::PutRecordError>),
+    #[error(transparent)]
+    BuildError(#[from] Box<aws_sdk_kinesis::error::BuildError>),
 
-    #[error("PutRecordsError {0}")]
-    KinesisPutRecordsError(#[from] Box<aws_sdk_kinesis::operation::put_records::PutRecordsError>),
-
-    #[error("BuildError {0}")]
-    KinesisBuildError(#[from] Box<aws_sdk_kinesis::error::BuildError>),
-
-    #[error("EntryOverAll")]
+    #[error("EntryOverAll {0}")]
     EntryOverAll(String),
 
-    #[error("EntryOverItem")]
+    #[error("EntryOverItem {0}")]
     EntryOverItem(String),
+
+    #[error(transparent)]
+    AwsSdk(#[from] Box<aws_sdk_kinesis::Error>),
+}
+
+pub(crate) fn from_aws_sdk_error(e: impl Into<aws_sdk_kinesis::Error>) -> Error {
+    Error::AwsSdk(Box::new(e.into()))
 }

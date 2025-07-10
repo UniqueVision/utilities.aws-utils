@@ -32,13 +32,13 @@ impl RecordsBuilder {
         self.entries
     }
 
-    pub fn add_entry_data(&mut self, data: String) -> Result<(), Error> {
+    pub fn add_entry_data(&mut self, data: impl Into<Vec<u8>>) -> Result<(), Error> {
         self.add_entry(data, None, None)
     }
 
     pub fn add_entry(
         &mut self,
-        data: String,
+        data: impl Into<Vec<u8>>,
         partition_key: Option<String>,
         explicit_hash_key: Option<String>,
     ) -> Result<(), Error> {
@@ -49,18 +49,28 @@ impl RecordsBuilder {
         };
 
         // 単体のサイズチェック
+        let data: Vec<u8> = data.into();
         let size = data.len() + partition_key.len();
         if size >= self.single_limit {
-            // 1MBを超える場合は追加しない
-            return Err(Error::EntryOverItem(data));
+            // 単体サイズを超える場合は追加しない
+            return Err(Error::EntryOverItem(format!(
+                "data size: {}, single_limit: {}",
+                size, self.single_limit
+            )));
         }
 
         // 合計サイズチェック
         if self.total_size + size >= self.total_limit || self.entries.len() >= self.record_limit {
-            // 合計サイズが5MBを超える場合は追加しない
-            return Err(Error::EntryOverAll(data));
+            // 合計サイズを超える場合は追加しない
+            return Err(Error::EntryOverAll(format!(
+                "total size: {}, total_limit: {}, entries: {}, record_limit: {}",
+                self.total_size + size,
+                self.total_limit,
+                self.entries.len() + 1,
+                self.record_limit
+            )));
         }
-        let blob = Blob::new(data.clone());
+        let blob = Blob::new(data);
         let entry = PutRecordsRequestEntry::builder()
             .data(blob)
             .partition_key(partition_key)

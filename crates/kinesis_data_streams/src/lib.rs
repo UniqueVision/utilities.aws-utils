@@ -1,13 +1,11 @@
 use aws_config::BehaviorVersion;
 use aws_sdk_kinesis::Client;
 
+pub mod builder;
 pub mod error;
 pub mod kinesis_data_stream;
-pub mod builder;
 
-pub async fn make_client(
-    endpoint_url: Option<String>,
-) -> Client {
+pub async fn make_client(endpoint_url: Option<String>) -> Client {
     if std::env::var("AWS_ACCESS_KEY_ID").is_err() {
         unsafe { std::env::set_var("AWS_ACCESS_KEY_ID", "dummy_access_key") };
     }
