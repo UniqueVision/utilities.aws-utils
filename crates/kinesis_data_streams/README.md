@@ -110,13 +110,67 @@ A builder for creating batches of records with automatic size validation:
 
 ### Error Handling
 
-The library provides comprehensive error handling through the `Error` enum:
+The library provides comprehensive error handling through the `Error` enum using the `thiserror` crate:
 
-- `KinesisPutItemError` - Errors from single record operations
-- `KinesisPutRecordsError` - Errors from batch operations
-- `KinesisBuildError` - Errors from building AWS requests
-- `EntryOverAll` - Record exceeds total batch size limit
-- `EntryOverItem` - Individual record exceeds size limit
+```rust
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error(transparent)]
+    BuildError(#[from] Box<aws_sdk_kinesis::error::BuildError>),
+    
+    #[error("EntryOverAll {0}")]
+    EntryOverAll(String),
+    
+    #[error("EntryOverItem {0}")]
+    EntryOverItem(String),
+    
+    #[error(transparent)]
+    AwsSdk(#[from] Box<aws_sdk_kinesis::Error>),
+}
+```
+
+Error variants:
+- `BuildError` - Errors when building AWS SDK request entries
+- `EntryOverItem` - Individual record exceeds the 1MB size limit
+- `EntryOverAll` - Adding a record would exceed batch limits (5MB total or 500 records)
+- `AwsSdk` - General AWS SDK errors (network issues, authentication, etc.)
+
+#### Error Handling Example
+
+```rust
+use kinesis_data_streams::{make_client, kinesis_data_stream, RecordsBuilder, error::Error};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = make_client(None).await;
+    
+    match kinesis_data_stream::add_record(&client, "my-stream", "key", "data").await {
+        Ok(output) => println!("Success: {}", output.sequence_number()),
+        Err(Error::AwsSdk(e)) => {
+            // Handle AWS SDK errors (e.g., stream not found, throttling)
+            eprintln!("AWS error: {}", e);
+        }
+        Err(e) => eprintln!("Other error: {}", e),
+    }
+    
+    // Batch operations with size limit handling
+    let mut builder = RecordsBuilder::new();
+    match builder.add_entry_data("Large data...".to_string()) {
+        Ok(()) => println!("Record added to batch"),
+        Err(Error::EntryOverItem(msg)) => {
+            // Single record too large
+            eprintln!("Record too large: {}", msg);
+        }
+        Err(Error::EntryOverAll(msg)) => {
+            // Batch is full, need to send current batch
+            eprintln!("Batch full: {}", msg);
+        }
+        Err(e) => eprintln!("Unexpected error: {}", e),
+    }
+    
+    Ok(())
+}
+```
 
 ## AWS Kinesis Limits
 
