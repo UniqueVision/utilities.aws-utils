@@ -10,6 +10,8 @@ use aws_sdk_sqs::{
     },
 };
 
+use crate::error::from_aws_sdk_error;
+
 #[derive(Debug, Clone)]
 pub struct Sqs {
     client: Client,
@@ -69,7 +71,8 @@ impl Sqs {
             .set_queue_name(Some(queue_name.to_owned()))
             .set_attributes(Some(attribute))
             .send()
-            .await?;
+            .await
+            .map_err(from_aws_sdk_error)?;
         Ok(resp.queue_url().map(|s| s.to_owned()))
     }
 
@@ -79,7 +82,8 @@ impl Sqs {
             .delete_queue()
             .set_queue_url(Some(self.queue_url.clone()))
             .send()
-            .await?;
+            .await
+            .map_err(from_aws_sdk_error)?;
         Ok(())
     }
 
@@ -96,7 +100,7 @@ impl Sqs {
             builder = builder.max_number_of_messages(max_number_of_messages);
         }
 
-        let resp = builder.send().await?;
+        let resp = builder.send().await.map_err(from_aws_sdk_error)?;
         let mut result = vec![];
         for message in resp.messages() {
             if let Some(body) = message.body() {
@@ -118,7 +122,8 @@ impl Sqs {
             .set_message_group_id(Some(message.key.clone()))
             .set_message_deduplication_id(Some(message.key))
             .send()
-            .await?;
+            .await
+            .map_err(from_aws_sdk_error)?;
         Ok(())
     }
 
@@ -139,7 +144,8 @@ impl Sqs {
             .set_queue_url(Some(self.queue_url.clone()))
             .set_entries(Some(entries))
             .send()
-            .await?;
+            .await
+            .map_err(from_aws_sdk_error)?;
         Ok(())
     }
 
@@ -150,7 +156,8 @@ impl Sqs {
             .set_queue_url(Some(self.queue_url.clone()))
             .set_receipt_handle(Some(handle.to_owned()))
             .send()
-            .await?;
+            .await
+            .map_err(from_aws_sdk_error)?;
         Ok(())
     }
 
@@ -170,7 +177,8 @@ impl Sqs {
             .set_queue_url(Some(self.queue_url.clone()))
             .set_entries(Some(entries))
             .send()
-            .await?;
+            .await
+            .map_err(from_aws_sdk_error)?;
         Ok(())
     }
 
