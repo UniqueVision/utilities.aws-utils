@@ -7,6 +7,9 @@ pub enum Error {
 
     #[error(transparent)]
     AwsSdk(#[from] Box<aws_sdk_sqs::Error>),
+
+    #[error("ValidationError: {0}")]
+    ValidationError(String),
 }
 
 pub(crate) fn from_aws_sdk_error(e: impl Into<aws_sdk_sqs::Error>) -> Error {
