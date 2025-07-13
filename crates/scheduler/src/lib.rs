@@ -1,3 +1,6 @@
+pub mod error;
+pub mod scheduler;
+
 pub async fn make_client(endpoint_url: Option<String>) -> aws_sdk_scheduler::Client {
     if std::env::var("AWS_ACCESS_KEY_ID").is_err() {
         unsafe { std::env::set_var("AWS_ACCESS_KEY_ID", "dummy_access_key") };

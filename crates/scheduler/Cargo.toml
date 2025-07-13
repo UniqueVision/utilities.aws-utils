@@ -6,3 +6,5 @@ edition = "2024"
 [dependencies]
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-scheduler = "1"
+chrono = { version = "0.4", features = ["serde", "clock"] }
+thiserror = "2"
