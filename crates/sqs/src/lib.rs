@@ -1,9 +1,8 @@
 use aws_config::BehaviorVersion;
 use aws_sdk_sqs::Client;
 
-pub mod create_queue_attribute_builder;
+pub mod builder;
 pub mod error;
-pub mod send_message_batch_entries_builder;
 pub mod sqs;
 
 pub async fn make_client(endpoint_url: Option<String>) -> Client {
