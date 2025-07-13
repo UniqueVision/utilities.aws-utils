@@ -1,0 +1,8 @@
+[package]
+name = "aws_utils_scheduler"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-sdk-scheduler = "1"

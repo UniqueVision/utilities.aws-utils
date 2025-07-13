@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "crates/sqs"
+		},
+		{
+			"path": "crates/scheduler"
 		}
 	],
 	"settings": {}
