@@ -20,16 +20,11 @@ pub struct RedrivePolicy {
 }
 
 impl RedrivePolicy {
-    pub fn new(max_receive_count: u32, dead_letter_target_arn: String) -> Result<Self, Error> {
-        if !(1..=1000).contains(&max_receive_count) {
-            return Err(Error::ValidationError(
-                "maxReceiveCount must be between 1 and 1000.".to_string(),
-            ));
-        }
-        Ok(Self {
+    pub fn new(max_receive_count: u32, dead_letter_target_arn: String) -> Self {
+        Self {
             max_receive_count,
             dead_letter_target_arn,
-        })
+        }
     }
 
     pub fn to_json(&self) -> Result<String, serde_json::Error> {
@@ -79,21 +74,11 @@ impl RedriveAllowPolicy {
         }
     }
 
-    pub fn by_queue(source_queue_arns: Vec<String>) -> Result<Self, Error> {
-        if source_queue_arns.is_empty() {
-            return Err(Error::ValidationError(
-                "sourceQueueArns cannot be empty when using byQueue permission.".to_string(),
-            ));
-        }
-        if source_queue_arns.len() > 10 {
-            return Err(Error::ValidationError(
-                "sourceQueueArns cannot contain more than 10 queue ARNs.".to_string(),
-            ));
-        }
-        Ok(Self {
+    pub fn by_queue(source_queue_arns: Vec<String>) -> Self {
+        Self {
             redrive_permission: RedrivePermission::ByQueue,
             source_queue_arns: Some(source_queue_arns),
-        })
+        }
     }
 
     pub fn to_json(&self) -> Result<String, serde_json::Error> {
@@ -152,34 +137,19 @@ impl CreateQueueAttributeBuilder {
         }
     }
 
-    pub fn delay_seconds(mut self, value: u32) -> Result<Self, Error> {
-        if value > 900 {
-            return Err(Error::ValidationError(
-                "DelaySeconds must be between 0 and 900 seconds.".to_string(),
-            ));
-        }
+    pub fn delay_seconds(mut self, value: u32) -> Self {
         self.delay_seconds = Some(value);
-        Ok(self)
+        self
     }
 
-    pub fn maximum_message_size(mut self, value: u32) -> Result<Self, Error> {
-        if !(1024..=262144).contains(&value) {
-            return Err(Error::ValidationError(
-                "MaximumMessageSize must be between 1024 and 262144 bytes.".to_string(),
-            ));
-        }
+    pub fn maximum_message_size(mut self, value: u32) -> Self {
         self.maximum_message_size = Some(value);
-        Ok(self)
+        self
     }
 
-    pub fn message_retention_period(mut self, value: u32) -> Result<Self, Error> {
-        if !(60..=1209600).contains(&value) {
-            return Err(Error::ValidationError(
-                "MessageRetentionPeriod must be between 60 and 1209600 seconds.".to_string(),
-            ));
-        }
+    pub fn message_retention_period(mut self, value: u32) -> Self {
         self.message_retention_period = Some(value);
-        Ok(self)
+        self
     }
 
     pub fn policy(mut self, value: String) -> Self {
@@ -187,24 +157,14 @@ impl CreateQueueAttributeBuilder {
         self
     }
 
-    pub fn receive_message_wait_time_seconds(mut self, value: u32) -> Result<Self, Error> {
-        if value > 20 {
-            return Err(Error::ValidationError(
-                "ReceiveMessageWaitTimeSeconds must be between 0 and 20 seconds.".to_string(),
-            ));
-        }
+    pub fn receive_message_wait_time_seconds(mut self, value: u32) -> Self {
         self.receive_message_wait_time_seconds = Some(value);
-        Ok(self)
+        self
     }
 
-    pub fn visibility_timeout(mut self, value: u32) -> Result<Self, Error> {
-        if value > 43200 {
-            return Err(Error::ValidationError(
-                "VisibilityTimeout must be between 0 and 43200 seconds.".to_string(),
-            ));
-        }
+    pub fn visibility_timeout(mut self, value: u32) -> Self {
         self.visibility_timeout = Some(value);
-        Ok(self)
+        self
     }
 
     pub fn redrive_policy(mut self, value: RedrivePolicy) -> Self {
@@ -227,14 +187,9 @@ impl CreateQueueAttributeBuilder {
         self
     }
 
-    pub fn kms_data_key_reuse_period_seconds(mut self, value: u32) -> Result<Self, Error> {
-        if !(60..=86400).contains(&value) {
-            return Err(Error::ValidationError(
-                "KmsDataKeyReusePeriodSeconds must be between 60 and 86400 seconds.".to_string(),
-            ));
-        }
+    pub fn kms_data_key_reuse_period_seconds(mut self, value: u32) -> Self {
         self.kms_data_key_reuse_period_seconds = Some(value);
-        Ok(self)
+        self
     }
 
     pub fn sqs_managed_sse_enabled(mut self, value: bool) -> Self {
@@ -253,6 +208,86 @@ impl CreateQueueAttributeBuilder {
     }
 
     pub fn build(self) -> Result<std::collections::HashMap<QueueAttributeName, String>, Error> {
+        // Validate all attributes
+        if let Some(value) = self.delay_seconds {
+            if value > 900 {
+                return Err(Error::ValidationError(
+                    "DelaySeconds must be between 0 and 900 seconds.".to_string(),
+                ));
+            }
+        }
+
+        if let Some(value) = self.maximum_message_size {
+            if !(1024..=262144).contains(&value) {
+                return Err(Error::ValidationError(
+                    "MaximumMessageSize must be between 1024 and 262144 bytes.".to_string(),
+                ));
+            }
+        }
+
+        if let Some(value) = self.message_retention_period {
+            if !(60..=1209600).contains(&value) {
+                return Err(Error::ValidationError(
+                    "MessageRetentionPeriod must be between 60 and 1209600 seconds.".to_string(),
+                ));
+            }
+        }
+
+        if let Some(value) = self.receive_message_wait_time_seconds {
+            if value > 20 {
+                return Err(Error::ValidationError(
+                    "ReceiveMessageWaitTimeSeconds must be between 0 and 20 seconds.".to_string(),
+                ));
+            }
+        }
+
+        if let Some(value) = self.visibility_timeout {
+            if value > 43200 {
+                return Err(Error::ValidationError(
+                    "VisibilityTimeout must be between 0 and 43200 seconds.".to_string(),
+                ));
+            }
+        }
+
+        if let Some(value) = self.kms_data_key_reuse_period_seconds {
+            if !(60..=86400).contains(&value) {
+                return Err(Error::ValidationError(
+                    "KmsDataKeyReusePeriodSeconds must be between 60 and 86400 seconds.".to_string(),
+                ));
+            }
+        }
+
+        // Validate RedrivePolicy
+        if let Some(ref redrive_policy) = self.redrive_policy {
+            if !(1..=1000).contains(&redrive_policy.max_receive_count) {
+                return Err(Error::ValidationError(
+                    "maxReceiveCount must be between 1 and 1000.".to_string(),
+                ));
+            }
+        }
+
+        // Validate RedriveAllowPolicy
+        if let Some(ref redrive_allow_policy) = self.redrive_allow_policy {
+            if matches!(redrive_allow_policy.redrive_permission, RedrivePermission::ByQueue) {
+                if let Some(ref arns) = redrive_allow_policy.source_queue_arns {
+                    if arns.is_empty() {
+                        return Err(Error::ValidationError(
+                            "sourceQueueArns cannot be empty when using byQueue permission.".to_string(),
+                        ));
+                    }
+                    if arns.len() > 10 {
+                        return Err(Error::ValidationError(
+                            "sourceQueueArns cannot contain more than 10 queue ARNs.".to_string(),
+                        ));
+                    }
+                } else {
+                    return Err(Error::ValidationError(
+                        "sourceQueueArns must be provided when using byQueue permission.".to_string(),
+                    ));
+                }
+            }
+        }
+
         // Validate FifoThroughputLimit and DeduplicationScope combination
         if let Some(ref fifo_limit) = self.fifo_throughput_limit {
             if matches!(fifo_limit, FifoThroughputLimit::PerMessageGroupId) {
