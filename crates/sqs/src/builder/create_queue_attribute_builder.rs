@@ -252,7 +252,8 @@ impl CreateQueueAttributeBuilder {
         if let Some(value) = self.kms_data_key_reuse_period_seconds {
             if !(60..=86400).contains(&value) {
                 return Err(Error::ValidationError(
-                    "KmsDataKeyReusePeriodSeconds must be between 60 and 86400 seconds.".to_string(),
+                    "KmsDataKeyReusePeriodSeconds must be between 60 and 86400 seconds."
+                        .to_string(),
                 ));
             }
         }
@@ -268,11 +269,15 @@ impl CreateQueueAttributeBuilder {
 
         // Validate RedriveAllowPolicy
         if let Some(ref redrive_allow_policy) = self.redrive_allow_policy {
-            if matches!(redrive_allow_policy.redrive_permission, RedrivePermission::ByQueue) {
+            if matches!(
+                redrive_allow_policy.redrive_permission,
+                RedrivePermission::ByQueue
+            ) {
                 if let Some(ref arns) = redrive_allow_policy.source_queue_arns {
                     if arns.is_empty() {
                         return Err(Error::ValidationError(
-                            "sourceQueueArns cannot be empty when using byQueue permission.".to_string(),
+                            "sourceQueueArns cannot be empty when using byQueue permission."
+                                .to_string(),
                         ));
                     }
                     if arns.len() > 10 {
@@ -282,7 +287,8 @@ impl CreateQueueAttributeBuilder {
                     }
                 } else {
                     return Err(Error::ValidationError(
-                        "sourceQueueArns must be provided when using byQueue permission.".to_string(),
+                        "sourceQueueArns must be provided when using byQueue permission."
+                            .to_string(),
                     ));
                 }
             }
