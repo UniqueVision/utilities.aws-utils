@@ -423,6 +423,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "aws_utils_sqs"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aws-config",
+ "aws-sdk-sqs",
+ "serde_json",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "backtrace"
 version = "0.3.75"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1701,18 +1713,6 @@ checksum = "e22376abed350d73dd1cd119b57ffccad95b4e585a7cda43e286245ce23c0678"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "sqs"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "aws-config",
- "aws-sdk-sqs",
- "serde_json",
- "thiserror",
- "tokio",
 ]
 
 [[package]]
