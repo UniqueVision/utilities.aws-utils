@@ -18,9 +18,10 @@ impl AtExpressionBuilder {
     }
 
     pub fn build(&self) -> Result<String, Error> {
-        let datetime = self.datetime
-            .ok_or_else(|| Error::ValidationError("datetime is required for at expression".to_string()))?;
-        
+        let datetime = self.datetime.ok_or_else(|| {
+            Error::ValidationError("datetime is required for at expression".to_string())
+        })?;
+
         Ok(format!("at({})", datetime.format("%Y-%m-%dT%H:%M:%S")))
     }
 }
@@ -42,9 +43,27 @@ pub enum RateUnit {
 impl RateUnit {
     fn as_str(&self, value: u32) -> &'static str {
         match self {
-            RateUnit::Minutes => if value == 1 { "minute" } else { "minutes" },
-            RateUnit::Hours => if value == 1 { "hour" } else { "hours" },
-            RateUnit::Days => if value == 1 { "day" } else { "days" },
+            RateUnit::Minutes => {
+                if value == 1 {
+                    "minute"
+                } else {
+                    "minutes"
+                }
+            }
+            RateUnit::Hours => {
+                if value == 1 {
+                    "hour"
+                } else {
+                    "hours"
+                }
+            }
+            RateUnit::Days => {
+                if value == 1 {
+                    "day"
+                } else {
+                    "days"
+                }
+            }
         }
     }
 }
@@ -93,16 +112,20 @@ impl RateExpressionBuilder {
     }
 
     pub fn build(&self) -> Result<String, Error> {
-        let value = self.value
-            .ok_or_else(|| Error::ValidationError("value is required for rate expression".to_string()))?;
-        
+        let value = self.value.ok_or_else(|| {
+            Error::ValidationError("value is required for rate expression".to_string())
+        })?;
+
         if value == 0 {
-            return Err(Error::ValidationError("value must be a positive number".to_string()));
+            return Err(Error::ValidationError(
+                "value must be a positive number".to_string(),
+            ));
         }
-        
-        let unit = self.unit
-            .ok_or_else(|| Error::ValidationError("unit is required for rate expression".to_string()))?;
-        
+
+        let unit = self.unit.ok_or_else(|| {
+            Error::ValidationError("unit is required for rate expression".to_string())
+        })?;
+
         Ok(format!("rate({} {})", value, unit.as_str(value)))
     }
 }
@@ -168,17 +191,25 @@ impl CronExpressionBuilder {
 
     fn validate_field(field: &str, name: &str, min: i32, max: i32) -> Result<(), Error> {
         // Skip validation for wildcards and special characters
-        if field == "*" || field == "?" || field.contains(',') || field.contains('-') || 
-           field.contains('/') || field.contains('L') || field.contains('W') || field.contains('#') {
+        if field == "*"
+            || field == "?"
+            || field.contains(',')
+            || field.contains('-')
+            || field.contains('/')
+            || field.contains('L')
+            || field.contains('W')
+            || field.contains('#')
+        {
             return Ok(());
         }
 
         // Try to parse as number
         if let Ok(value) = field.parse::<i32>() {
             if value < min || value > max {
-                return Err(Error::ValidationError(
-                    format!("{} must be between {} and {}", name, min, max)
-                ));
+                return Err(Error::ValidationError(format!(
+                    "{} must be between {} and {}",
+                    name, min, max
+                )));
             }
         }
 
@@ -186,29 +217,40 @@ impl CronExpressionBuilder {
     }
 
     pub fn build(&self) -> Result<String, Error> {
-        let minutes = self.minutes.as_ref()
-            .ok_or_else(|| Error::ValidationError("minutes is required for cron expression".to_string()))?;
-        let hours = self.hours.as_ref()
-            .ok_or_else(|| Error::ValidationError("hours is required for cron expression".to_string()))?;
-        let day_of_month = self.day_of_month.as_ref()
-            .ok_or_else(|| Error::ValidationError("day_of_month is required for cron expression".to_string()))?;
-        let month = self.month.as_ref()
-            .ok_or_else(|| Error::ValidationError("month is required for cron expression".to_string()))?;
-        let day_of_week = self.day_of_week.as_ref()
-            .ok_or_else(|| Error::ValidationError("day_of_week is required for cron expression".to_string()))?;
+        let minutes = self.minutes.as_ref().ok_or_else(|| {
+            Error::ValidationError("minutes is required for cron expression".to_string())
+        })?;
+        let hours = self.hours.as_ref().ok_or_else(|| {
+            Error::ValidationError("hours is required for cron expression".to_string())
+        })?;
+        let day_of_month = self.day_of_month.as_ref().ok_or_else(|| {
+            Error::ValidationError("day_of_month is required for cron expression".to_string())
+        })?;
+        let month = self.month.as_ref().ok_or_else(|| {
+            Error::ValidationError("month is required for cron expression".to_string())
+        })?;
+        let day_of_week = self.day_of_week.as_ref().ok_or_else(|| {
+            Error::ValidationError("day_of_week is required for cron expression".to_string())
+        })?;
 
         // Validate fields
         Self::validate_field(minutes, "minutes", 0, 59)?;
         Self::validate_field(hours, "hours", 0, 23)?;
         Self::validate_field(day_of_month, "day_of_month", 1, 31)?;
-        
+
         // Validate month (1-12 or JAN-DEC)
-        if !month.chars().all(|c| c.is_alphabetic() || c == '-' || c == ',' || c == '*' || c == '?') {
+        if !month
+            .chars()
+            .all(|c| c.is_alphabetic() || c == '-' || c == ',' || c == '*' || c == '?')
+        {
             Self::validate_field(month, "month", 1, 12)?;
         }
-        
+
         // Validate day_of_week (1-7 or SUN-SAT)
-        if !day_of_week.chars().all(|c| c.is_alphabetic() || c == '-' || c == ',' || c == '*' || c == '?') {
+        if !day_of_week
+            .chars()
+            .all(|c| c.is_alphabetic() || c == '-' || c == ',' || c == '*' || c == '?')
+        {
             Self::validate_field(day_of_week, "day_of_week", 1, 7)?;
         }
 
@@ -220,14 +262,20 @@ impl CronExpressionBuilder {
         // Cannot specify both day_of_month and day_of_week
         if day_of_month != "?" && day_of_week != "?" {
             return Err(Error::ValidationError(
-                "Cannot specify both day_of_month and day_of_week, one must be '?'".to_string()
+                "Cannot specify both day_of_month and day_of_week, one must be '?'".to_string(),
             ));
         }
 
         let expression = if let Some(year) = &self.year {
-            format!("cron({} {} {} {} {} {})", minutes, hours, day_of_month, month, day_of_week, year)
+            format!(
+                "cron({} {} {} {} {} {})",
+                minutes, hours, day_of_month, month, day_of_week, year
+            )
         } else {
-            format!("cron({} {} {} {} {})", minutes, hours, day_of_month, month, day_of_week)
+            format!(
+                "cron({} {} {} {} {})",
+                minutes, hours, day_of_month, month, day_of_week
+            )
         };
 
         Ok(expression)
@@ -252,7 +300,7 @@ mod tests {
             .datetime(datetime)
             .build()
             .unwrap();
-        
+
         assert_eq!(expression, "at(2022-11-20T13:00:00)");
     }
 
@@ -269,27 +317,21 @@ mod tests {
             .unit(RateUnit::Minutes)
             .build()
             .unwrap();
-        
+
         assert_eq!(expression, "rate(5 minutes)");
     }
 
     #[test]
     fn test_rate_expression_builder_singular() {
-        let expression = RateExpressionBuilder::new()
-            .hours(1)
-            .build()
-            .unwrap();
-        
+        let expression = RateExpressionBuilder::new().hours(1).build().unwrap();
+
         assert_eq!(expression, "rate(1 hour)");
     }
 
     #[test]
     fn test_rate_expression_builder_convenience_methods() {
-        let expression = RateExpressionBuilder::new()
-            .days(7)
-            .build()
-            .unwrap();
-        
+        let expression = RateExpressionBuilder::new().days(7).build().unwrap();
+
         assert_eq!(expression, "rate(7 days)");
     }
 
@@ -299,7 +341,7 @@ mod tests {
             .value(0)
             .unit(RateUnit::Hours)
             .build();
-        
+
         assert!(result.is_err());
     }
 
@@ -314,7 +356,7 @@ mod tests {
             .year("2022-2023")
             .build()
             .unwrap();
-        
+
         assert_eq!(expression, "cron(15 10 ? * 6L 2022-2023)");
     }
 
@@ -328,7 +370,7 @@ mod tests {
             .day_of_week("?")
             .build()
             .unwrap();
-        
+
         assert_eq!(expression, "cron(0 12 1 * ?)");
     }
 
@@ -342,7 +384,7 @@ mod tests {
             .day_of_week("MON-FRI")
             .build()
             .unwrap();
-        
+
         assert_eq!(expression, "cron(30 14 ? JAN,JUL MON-FRI)");
     }
 
@@ -355,7 +397,7 @@ mod tests {
             .month("*")
             .day_of_week("MON")
             .build();
-        
+
         assert!(result.is_err());
     }
 
@@ -368,7 +410,7 @@ mod tests {
             .month("*")
             .day_of_week("*")
             .build();
-        
+
         assert!(result.is_err());
     }
 }
