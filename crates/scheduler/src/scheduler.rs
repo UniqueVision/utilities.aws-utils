@@ -1,6 +1,9 @@
 use crate::error::{Error, from_aws_sdk_error};
 use aws_sdk_scheduler::{
-    operation::create_schedule::CreateScheduleOutput, primitives::DateTime as AwsDateTime, types::{ActionAfterCompletion, FlexibleTimeWindow, ScheduleState, Target}, Client
+    Client,
+    operation::{create_schedule::CreateScheduleOutput, delete_schedule::DeleteScheduleOutput},
+    primitives::DateTime as AwsDateTime,
+    types::{ActionAfterCompletion, FlexibleTimeWindow, ScheduleState, Target},
 };
 use chrono::prelude::*;
 
@@ -40,3 +43,34 @@ pub async fn create_scheduler(
         .await
         .map_err(from_aws_sdk_error)
 }
+
+pub async fn delete_scheduler(
+    client: &Client,
+    name: impl Into<String>,
+    group_name: Option<impl Into<String>>,
+    client_token: Option<impl Into<String>>,
+) -> Result<DeleteScheduleOutput, Error> {
+    client
+        .delete_schedule()
+        .name(name.into())
+        .set_group_name(group_name.map(|g| g.into()))
+        .set_client_token(client_token.map(|c| c.into()))
+        .send()
+        .await
+        .map_err(from_aws_sdk_error)
+}
+
+pub async fn get_scheduler(
+    client: &Client,
+    name: impl Into<String>,
+    group_name: Option<impl Into<String>>,
+) -> Result<aws_sdk_scheduler::operation::get_schedule::GetScheduleOutput, Error> {
+    client
+        .get_schedule()
+        .name(name.into())
+        .set_group_name(group_name.map(|g| g.into()))
+        .send()
+        .await
+        .map_err(from_aws_sdk_error)
+}
+

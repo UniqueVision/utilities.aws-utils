@@ -207,8 +207,7 @@ impl CronExpressionBuilder {
         if let Ok(value) = field.parse::<i32>() {
             if value < min || value > max {
                 return Err(Error::ValidationError(format!(
-                    "{} must be between {} and {}",
-                    name, min, max
+                    "{name} must be between {min} and {max}"
                 )));
             }
         }
@@ -268,13 +267,11 @@ impl CronExpressionBuilder {
 
         let expression = if let Some(year) = &self.year {
             format!(
-                "cron({} {} {} {} {} {})",
-                minutes, hours, day_of_month, month, day_of_week, year
+                "cron({minutes} {hours} {day_of_month} {month} {day_of_week} {year})"
             )
         } else {
             format!(
-                "cron({} {} {} {} {})",
-                minutes, hours, day_of_month, month, day_of_week
+                "cron({minutes} {hours} {day_of_month} {month} {day_of_week})"
             )
         };
 
