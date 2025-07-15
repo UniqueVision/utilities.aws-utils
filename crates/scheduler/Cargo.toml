@@ -2,11 +2,38 @@
 name = "aws_utils_scheduler"
 version = "0.1.0"
 edition = "2024"
+description = "A Rust wrapper for AWS EventBridge Scheduler with type-safe builders for schedule expressions"
+documentation = "https://docs.rs/aws_utils_scheduler"
+homepage = "https://github.com/UniqueVision/utilities.aws-utils"
+repository = "https://github.com/UniqueVision/utilities.aws-utils"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["aws", "eventbridge", "scheduler", "async", "cloud"]
+categories = ["api-bindings", "asynchronous", "date-and-time"]
+exclude = [
+    ".gitignore",
+    ".github/",
+    "tests/",
+    "examples/",
+    "benches/",
+    ".*",
+]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-scheduler = "1"
 aws-smithy-types-convert = { version = "0.60", features = ["convert-streams"] }
 chrono = { version = "0.4", features = ["serde", "clock"] }
-futures-util = "0.3.31"
+futures-util = "0.3"
 thiserror = "2"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio-test = "0.4"
+
+[badges]
+maintenance = { status = "actively-developed" }
