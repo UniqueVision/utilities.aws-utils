@@ -266,13 +266,9 @@ impl CronExpressionBuilder {
         }
 
         let expression = if let Some(year) = &self.year {
-            format!(
-                "cron({minutes} {hours} {day_of_month} {month} {day_of_week} {year})"
-            )
+            format!("cron({minutes} {hours} {day_of_month} {month} {day_of_week} {year})")
         } else {
-            format!(
-                "cron({minutes} {hours} {day_of_month} {month} {day_of_week})"
-            )
+            format!("cron({minutes} {hours} {day_of_month} {month} {day_of_week})")
         };
 
         Ok(expression)

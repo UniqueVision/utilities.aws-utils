@@ -3,9 +3,11 @@ use aws_sdk_scheduler::{
     Client,
     operation::{create_schedule::CreateScheduleOutput, delete_schedule::DeleteScheduleOutput},
     primitives::DateTime as AwsDateTime,
-    types::{ActionAfterCompletion, FlexibleTimeWindow, ScheduleState, Target},
+    types::{ActionAfterCompletion, FlexibleTimeWindow, ScheduleState, ScheduleSummary, Target},
 };
+use aws_smithy_types_convert::stream::PaginationStreamExt;
 use chrono::prelude::*;
+use futures_util::{Stream, TryStreamExt};
 
 #[allow(clippy::too_many_arguments)]
 pub async fn create_scheduler(
@@ -74,3 +76,35 @@ pub async fn get_scheduler(
         .map_err(from_aws_sdk_error)
 }
 
+pub fn list_scheduler(
+    client: &Client,
+    name_prefix: Option<impl Into<String>>,
+    group_name: Option<impl Into<String>>,
+    state: Option<ScheduleState>,
+) -> impl Stream<Item = Result<ScheduleSummary, Error>> {
+    client
+        .list_schedules()
+        .set_name_prefix(name_prefix.map(|n| n.into()))
+        .set_group_name(group_name.map(|g| g.into()))
+        .set_state(state)
+        .into_paginator()
+        .items()
+        .send()
+        .into_stream_03x()
+        .map_err(from_aws_sdk_error)
+}
+
+pub async fn list_all(
+    client: &Client,
+    name_prefix: Option<impl Into<String>>,
+    group_name: Option<impl Into<String>>,
+    state: Option<ScheduleState>,
+) -> Result<Vec<ScheduleSummary>, Error> {
+    let stream = list_scheduler(client, name_prefix, group_name, state);
+    futures_util::pin_mut!(stream);
+    let mut result = vec![];
+    while let Some(item) = stream.try_next().await? {
+        result.push(item);
+    }
+    Ok(result)
+}
