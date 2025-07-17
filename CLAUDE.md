@@ -55,3 +55,6 @@ The client provides methods for:
 - Batch putting records with automatic retry on failures
 
 Code includes Japanese comments documenting AWS service limits and restrictions.
+
+## Note
+- Cargoのeditionは2024です。

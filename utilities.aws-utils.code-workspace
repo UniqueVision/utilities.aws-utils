@@ -7,13 +7,16 @@
 			"path": "crates/kinesis_data_streams"
 		},
 		{
-			"path": "crates/sqs"
+			"path": "crates/lambda"
 		},
 		{
 			"path": "crates/scheduler"
 		},
 		{
-			"path": "crates/lambda"
+			"path": "crates/secretsmanager"
+		},
+		{
+			"path": "crates/sqs"
 		}
 	],
 	"settings": {}
