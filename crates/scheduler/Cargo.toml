@@ -10,14 +10,6 @@ license = "MIT OR Apache-2.0"
 readme = "README.md"
 keywords = ["aws", "eventbridge", "scheduler", "async", "cloud"]
 categories = ["api-bindings", "asynchronous", "date-and-time"]
-exclude = [
-    ".gitignore",
-    ".github/",
-    "tests/",
-    "examples/",
-    "benches/",
-    ".*",
-]
 
 [package.metadata.docs.rs]
 all-features = true
