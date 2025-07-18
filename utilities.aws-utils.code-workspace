@@ -17,6 +17,9 @@
 		},
 		{
 			"path": "crates/sqs"
+		},
+		{
+			"path": "crates/ssm"
 		}
 	],
 	"settings": {}

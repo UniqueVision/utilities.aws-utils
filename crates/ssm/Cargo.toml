@@ -1,0 +1,16 @@
+[package]
+name = "aws_utils_ssm"
+version = "0.1.0"
+edition = "2024"
+authors = ["Your Name <you@example.com>"]
+description = "AWS SSM utilities for getting parameter values"
+license = "MIT"
+
+[dependencies]
+aws-config = "1.8"
+aws-sdk-ssm = "1"
+thiserror = "2"
+serde_json = "1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
