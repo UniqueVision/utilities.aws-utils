@@ -2,6 +2,14 @@
 name = "aws_utils_secretsmanager"
 version = "0.1.0"
 edition = "2024"
+description = "AWS Secrets Manager utilities for retrieving secret values"
+license = "MIT"
+repository = "https://github.com/UniqueVision/utilities.aws-utils"
+homepage = "https://github.com/UniqueVision/utilities.aws-utils"
+documentation = "https://docs.rs/aws_utils_secretsmanager"
+readme = "README.md"
+keywords = ["aws", "secrets-manager", "secrets", "credentials", "cloud"]
+categories = ["api-bindings", "web-programming", "config"]
 
 [dependencies]
 aws-config = { version = "1.8", features = ["behavior-version-latest"] }

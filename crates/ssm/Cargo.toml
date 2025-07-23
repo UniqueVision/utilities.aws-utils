@@ -2,9 +2,15 @@
 name = "aws_utils_ssm"
 version = "0.1.0"
 edition = "2024"
-authors = ["Your Name <you@example.com>"]
-description = "AWS SSM utilities for getting parameter values"
+description = "AWS SSM utilities for getting parameter values from AWS Systems Manager Parameter Store"
 license = "MIT"
+authors = ["UniqueVision <info@uniquevision.co.jp>"]
+repository = "https://github.com/UniqueVision/utilities.aws-utils"
+homepage = "https://github.com/UniqueVision/utilities.aws-utils"
+documentation = "https://docs.rs/aws_utils_ssm"
+readme = "README.md"
+keywords = ["aws", "ssm", "parameter-store", "systems-manager", "cloud"]
+categories = ["api-bindings", "web-programming", "config"]
 
 [dependencies]
 aws-config = "1.8"

@@ -37,11 +37,11 @@ mod tests {
 
         let endpoint_url = std::env::var("SSM_ENDPOINT_URL").ok();
         let client = crate::make_client(endpoint_url).await;
-        
+
         // テスト用のパラメータ名を環境変数から取得
         let parameter_name = std::env::var("TEST_SSM_PARAMETER_NAME")
             .unwrap_or_else(|_| "/test/parameter".to_string());
-        
+
         // パラメータの取得をテスト
         match get_parameter(&client, &parameter_name).await {
             Ok(value) => {
@@ -67,10 +67,10 @@ mod tests {
 
         let endpoint_url = std::env::var("SSM_ENDPOINT_URL").ok();
         let client = crate::make_client(endpoint_url).await;
-        
+
         let parameter_name = std::env::var("TEST_SSM_PARAMETER_NAME")
             .unwrap_or_else(|_| "/test/parameter".to_string());
-        
+
         // 暗号化なしでパラメータを取得
         match get_parameter_raw(&client, Some(&parameter_name), Some(false)).await {
             Ok(output) => {
