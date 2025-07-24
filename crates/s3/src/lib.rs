@@ -19,7 +19,9 @@ pub async fn make_client(endpoint_url: Option<String>) -> Client {
     let config = aws_config::load_defaults(BehaviorVersion::latest()).await;
     let mut builder = aws_sdk_s3::config::Builder::from(&config);
     if let Some(aws_endpoint_url) = endpoint_url {
-        builder = builder.endpoint_url(aws_endpoint_url)
+        builder = builder
+            .endpoint_url(aws_endpoint_url)
+            .force_path_style(true);
     }
     Client::from_conf(builder.build())
 }
