@@ -20,6 +20,9 @@
 		},
 		{
 			"path": "crates/ssm"
+		},
+		{
+			"path": "crates/s3"
 		}
 	],
 	"settings": {}
