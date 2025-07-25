@@ -1,11 +1,13 @@
-use std::{path::Path, time::Duration};
+use std::path::Path;
 
 use aws_sdk_s3::{
     Client,
     operation::{
-        delete_object::DeleteObjectOutput, get_object::GetObjectOutput, put_object::PutObjectOutput,
+        copy_object::CopyObjectOutput,
+        delete_object::DeleteObjectOutput,
+        get_object::GetObjectOutput,
+        put_object::PutObjectOutput,
     },
-    presigning::{PresignedRequest, PresigningConfig},
     primitives::ByteStream,
     types::Object,
 };
@@ -18,12 +20,12 @@ use crate::error::{Error, from_aws_sdk_error};
 pub fn list_stream(
     client: &Client,
     bucket_name: impl Into<String>,
-    prefix: impl Into<String>,
+    prefix: Option<impl Into<String>>,
 ) -> impl TryStream<Ok = Object, Error = Error> {
     client
         .list_objects_v2()
         .bucket(bucket_name.into())
-        .prefix(prefix.into())
+        .set_prefix(prefix.map(Into::into))
         .into_paginator()
         .send()
         .into_stream_03x()
@@ -35,7 +37,7 @@ pub fn list_stream(
 pub async fn list_all(
     client: &Client,
     bucket_name: impl Into<String>,
-    prefix: impl Into<String>,
+    prefix: Option<impl Into<String>>,
 ) -> Result<Vec<Object>, Error> {
     list_stream(client, bucket_name, prefix).try_collect().await
 }
@@ -52,6 +54,30 @@ pub async fn get_object(
         .send()
         .await
         .map_err(from_aws_sdk_error)
+}
+
+pub async fn is_exists(
+    client: &Client,
+    bucket_name: impl Into<String>,
+    key: impl Into<String>,
+) -> Result<bool, Error> {
+    let res = client
+        .head_object()
+        .bucket(bucket_name.into())
+        .key(key.into())
+        .send()
+        .await
+        .map_err(from_aws_sdk_error);
+    match res {
+        Ok(_) => Ok(true),
+        Err(e) => {
+            if e.is_no_such_key() || e.is_no_such_bucket() {
+                Ok(false)
+            } else {
+                Err(e)
+            }
+        }
+    }
 }
 
 pub async fn get_object_string(object: GetObjectOutput) -> Result<(String, String), Error> {
@@ -119,44 +145,10 @@ pub async fn delete_object(
         .map_err(from_aws_sdk_error)
 }
 
-pub async fn put_presigned(
-    client: &Client,
-    bucket_name: impl Into<String>,
-    key: impl Into<String>,
-    duration: Duration,
-) -> Result<PresignedRequest, Error> {
-    client
-        .put_object()
-        .set_bucket(Some(bucket_name.into()))
-        .set_key(Some(key.into()))
-        .presigned(PresigningConfig::expires_in(duration)?)
-        .await
-        .map_err(from_aws_sdk_error)
-}
-
-pub async fn get_presigned(
-    client: &Client,
-    bucket_name: impl Into<String>,
-    key: impl Into<String>,
-    duration: Duration,
-) -> Result<PresignedRequest, Error> {
-    client
-        .get_object()
-        .set_bucket(Some(bucket_name.into()))
-        .set_key(Some(key.into()))
-        .presigned(PresigningConfig::expires_in(duration)?)
-        .await
-        .map_err(from_aws_sdk_error)
-}
-
-pub fn presigned_url(presigned_request: &PresignedRequest) -> String {
-    presigned_request.uri().to_string()
-}
-
 pub async fn delete_objects(
     client: &Client,
     bucket_name: impl Into<String>,
-    prefix: impl Into<String>,
+    prefix: Option<impl Into<String>>,
 ) -> Result<(), Error> {
     let batch_size = 1000;
     let bucket_name = bucket_name.into();
@@ -199,6 +191,54 @@ pub async fn delete_objects(
             .send()
             .await
             .map_err(from_aws_sdk_error)?;
+    }
+    Ok(())
+}
+
+pub async fn copy_object(
+    client: &Client,
+    src_bucket_name: impl Into<String>,
+    src_key: impl Into<String>,
+    dst_bucket_name: impl Into<String>,
+    dst_key: impl Into<String>,
+) -> Result<CopyObjectOutput, Error> {
+    let source = format!(
+        "{}/{}",
+        urlencoding::Encoded(src_bucket_name.into()),
+        urlencoding::Encoded(src_key.into())
+    );
+    client
+        .copy_object()
+        .bucket(dst_bucket_name.into())
+        .key(dst_key.into())
+        .copy_source(source)
+        .send()
+        .await
+        .map_err(from_aws_sdk_error)
+}
+
+pub async fn copy_objects_prefix(
+    client: &Client,
+    src_bucket_name: impl Into<String>,
+    src_prefix: impl Into<String>,
+    dst_bucket_name: impl Into<String>,
+    dst_prefix: impl Into<String>,
+) -> Result<(), Error> {
+    let src_bucket_name = src_bucket_name.into();
+    let dst_bucket_name = dst_bucket_name.into();
+    let dst_prefix = dst_prefix.into();
+    let src_prefix = src_prefix.into();
+    let mut stream = list_stream(client, &src_bucket_name, Some(&src_prefix));
+
+    while let Some(object) = stream.try_next().await? {
+        let Some(src_key) = object.key() else {
+            continue;
+        };
+        let Some(strip_key) = src_key.strip_prefix(&src_prefix) else {
+            continue; // Skip if the key does not match the prefix
+        };
+        let dst_key = format!("{dst_prefix}/{strip_key}");
+        copy_object(client, &src_bucket_name, src_key, &dst_bucket_name, dst_key).await?;
     }
     Ok(())
 }

@@ -493,6 +493,7 @@ dependencies = [
  "futures-util",
  "thiserror",
  "tokio",
+ "urlencoding",
 ]
 
 [[package]]

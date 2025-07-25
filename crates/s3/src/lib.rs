@@ -1,8 +1,10 @@
 use aws_config::BehaviorVersion;
 use aws_sdk_s3::Client;
 
+pub mod bucket;
 pub mod error;
-pub mod s3;
+pub mod object;
+pub mod presigned;
 
 pub use aws_sdk_s3;
 
