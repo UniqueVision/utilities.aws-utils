@@ -4,39 +4,60 @@ A utility crate for AWS S3 client operations.
 
 ## Features
 
-### Object Listing
-- `list_stream` - Stream objects from an S3 bucket
-- `list_all` - Retrieve all objects from an S3 bucket at once
+### Client Setup
+- `make_client` - Create an S3 client with optional endpoint URL configuration
+
+### Bucket Operations
+- `bucket::create_bucket` - Create a new S3 bucket
+- `bucket::list_stream` - Stream buckets with prefix filtering
+- `bucket::list_all` - List all buckets matching a prefix
+- `bucket::delete_bucket` - Delete a bucket and all its contents
+- `bucket::delete_buckets` - Delete multiple buckets matching a prefix
 
 ### Object Operations
-- `get_object` - Retrieve an object
-- `get_object_string` - Retrieve object content as a string
-- `get_object_buf_reader` - Get object as a BufferedReader
-- `put_object` - Upload an object
-- `put_object_from_path` - Upload an object from a file path
-- `delete_object` - Delete a single object
-- `delete_objects` - Batch delete objects matching a prefix
+- `object::list_stream` - Stream objects from an S3 bucket with optional prefix
+- `object::list_all` - Retrieve all objects from an S3 bucket at once
+- `object::get_object` - Retrieve an object
+- `object::is_exists` - Check if an object exists
+- `object::get_object_string` - Retrieve object content as a string
+- `object::get_object_buf_reader` - Get object as a BufferedReader
+- `object::put_object` - Upload an object
+- `object::put_object_from_path` - Upload an object from a file path
+- `object::delete_object` - Delete a single object
+- `object::delete_objects` - Batch delete objects matching a prefix
+- `object::copy_object` - Copy an object between buckets
+- `object::copy_objects_prefix` - Copy multiple objects matching a prefix
 
 ### Presigned URLs
-- `put_presigned` - Generate a presigned URL for uploads
-- `get_presigned` - Generate a presigned URL for downloads
-- `presigned_url` - Extract URL string from PresignedRequest
+- `presigned::put_presigned` - Generate a presigned URL for uploads
+- `presigned::get_presigned` - Generate a presigned URL for downloads
+- `presigned::presigned_url` - Extract URL string from PresignedRequest
 
 ## Usage Examples
 
 ```rust
-use aws_sdk_s3::Client;
-use aws_utils_s3::s3;
+use aws_utils_s3::{bucket, object, presigned, make_client};
+
+// Create client
+let client = make_client(None).await;
+
+// Bucket operations
+bucket::create_bucket(&client, "my-bucket").await?;
+let buckets = bucket::list_all(&client, "my-").await?;
+bucket::delete_bucket(&client, "old-bucket").await?;
 
 // List objects
-let objects = s3::list_all(&client, "my-bucket", "prefix/").await?;
+let objects = object::list_all(&client, "my-bucket", Some("prefix/")).await?;
+
+// Check if object exists
+let exists = object::is_exists(&client, "my-bucket", "key.txt").await?;
 
 // Get object
-let object = s3::get_object(&client, "my-bucket", "key.txt").await?;
-let (content_type, content) = s3::get_object_string(object).await?;
+let object = object::get_object(&client, "my-bucket", "key.txt").await?;
+let (content_type, content) = object::get_object_string(object).await?;
 
 // Upload object
-s3::put_object(
+object::put_object(
     &client,
     "my-bucket",
     "key.txt",
@@ -46,7 +67,7 @@ s3::put_object(
 ).await?;
 
 // Upload from file
-s3::put_object_from_path(
+object::put_object_from_path(
     &client,
     "my-bucket",
     "key.pdf",
@@ -55,17 +76,35 @@ s3::put_object_from_path(
     None,
 ).await?;
 
+// Copy object
+object::copy_object(
+    &client,
+    "src-bucket",
+    "src-key.txt",
+    "dst-bucket",
+    "dst-key.txt",
+).await?;
+
+// Copy objects with prefix
+object::copy_objects_prefix(
+    &client,
+    "src-bucket",
+    "src-prefix",
+    "dst-bucket",
+    "dst-prefix",
+).await?;
+
 // Generate presigned URL
-let presigned = s3::get_presigned(
+let presigned = presigned::get_presigned(
     &client,
     "my-bucket",
     "key.txt",
     std::time::Duration::from_secs(3600),
 ).await?;
-let url = s3::presigned_url(&presigned);
+let url = presigned::presigned_url(&presigned);
 
 // Batch delete objects with prefix
-s3::delete_objects(&client, "my-bucket", "temp/").await?;
+object::delete_objects(&client, "my-bucket", Some("temp/")).await?;
 ```
 
 ## Error Handling
