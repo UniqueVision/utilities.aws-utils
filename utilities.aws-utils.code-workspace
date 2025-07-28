@@ -4,10 +4,16 @@
 			"path": "."
 		},
 		{
+			"path": "crates/dynamodb"
+		},
+		{
 			"path": "crates/kinesis_data_streams"
 		},
 		{
 			"path": "crates/lambda"
+		},
+		{
+			"path": "crates/s3"
 		},
 		{
 			"path": "crates/scheduler"
@@ -20,9 +26,6 @@
 		},
 		{
 			"path": "crates/ssm"
-		},
-		{
-			"path": "crates/s3"
 		}
 	],
 	"settings": {}
