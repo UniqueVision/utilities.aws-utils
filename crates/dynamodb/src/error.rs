@@ -13,6 +13,9 @@ pub enum Error {
 
     #[error("NotFound")]
     NotFound,
+
+    #[error("Invalid: {0}")]
+    Invalid(String),
 }
 
 pub(crate) fn from_aws_sdk_error(e: impl Into<aws_sdk_dynamodb::Error>) -> Error {

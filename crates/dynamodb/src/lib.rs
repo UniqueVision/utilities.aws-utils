@@ -1,6 +1,7 @@
 use aws_config::BehaviorVersion;
 use aws_sdk_dynamodb::Client;
 
+pub mod csv;
 pub mod error;
 pub mod record;
 pub mod table;

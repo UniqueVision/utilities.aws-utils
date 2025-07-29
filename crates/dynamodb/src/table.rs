@@ -18,20 +18,20 @@ pub enum TableType {
 pub async fn create_table(
     client: &Client,
     table_name: impl Into<String>,
-    hash_key: impl Into<String>,
-    sort_key: Option<impl Into<String>>,
+    hash_key_name: impl Into<String>,
+    sort_key_name: Option<impl Into<String>>,
     table_type: TableType,
     attribute_definitions: Vec<AttributeDefinition>,
     global_secondary_indexes: Option<Vec<aws_sdk_dynamodb::types::GlobalSecondaryIndex>>,
 ) -> Result<CreateTableOutput, Error> {
     let ks = KeySchemaElement::builder()
-        .attribute_name(hash_key)
+        .attribute_name(hash_key_name)
         .key_type(KeyType::Hash)
         .build()?;
 
-    let kss = if let Some(sort_key) = sort_key {
+    let kss = if let Some(sort_key_name) = sort_key_name {
         let sort_key = KeySchemaElement::builder()
-            .attribute_name(sort_key)
+            .attribute_name(sort_key_name)
             .key_type(KeyType::Range)
             .build()?;
         vec![ks, sort_key]

@@ -435,6 +435,7 @@ dependencies = [
  "aws-smithy-types-convert",
  "futures-util",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
