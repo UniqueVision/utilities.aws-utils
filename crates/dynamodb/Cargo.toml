@@ -2,6 +2,12 @@
 name = "aws_utils_dynamodb"
 version = "0.1.0"
 edition = "2024"
+description = "AWS DynamoDB utilities for Rust"
+repository = "https://github.com/UniqueVision/utilities.aws-utils"
+license = "MIT OR Apache-2.0"
+keywords = ["aws", "dynamodb", "utilities"]
+categories = ["api-bindings", "database"]
+readme = "README.md"
 
 [dependencies]
 aws-config = { version = "1.8", features = ["behavior-version-latest"] }
