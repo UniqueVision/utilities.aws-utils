@@ -2,6 +2,9 @@ use aws_config::BehaviorVersion;
 use aws_sdk_dynamodb::Client;
 
 pub mod error;
+pub mod record;
+pub mod table;
+
 pub use aws_sdk_dynamodb;
 
 pub async fn make_client(endpoint_url: Option<String>) -> Client {

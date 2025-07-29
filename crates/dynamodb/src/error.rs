@@ -11,7 +11,7 @@ pub enum Error {
     #[error("ValidationError: {0}")]
     ValidationError(String),
 
-    #[error("Parameter not found")]
+    #[error("NotFound")]
     NotFound,
 }
 
