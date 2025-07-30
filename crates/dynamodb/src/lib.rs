@@ -3,7 +3,7 @@ use aws_sdk_dynamodb::Client;
 
 pub mod csv;
 pub mod error;
-pub mod holder;
+pub mod cache;
 pub mod record;
 pub mod table;
 
