@@ -1,5 +1,8 @@
 # Changes
 
+## v0.1.2 (2025/07/31)
+* add 
+
 ## v0.1.1 (2025/07/29)
 * add is_conditional_check_failed_exception
 

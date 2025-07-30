@@ -1,6 +1,6 @@
 [package]
 name = "aws_utils_dynamodb"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "AWS DynamoDB utilities for Rust"
 repository = "https://github.com/UniqueVision/utilities.aws-utils"
@@ -13,6 +13,11 @@ readme = "README.md"
 aws-config = { version = "1.8", features = ["behavior-version-latest"] }
 aws-sdk-dynamodb = "1"
 aws-smithy-types-convert = { version = "0.60.9", features = ["convert-streams"] }
+chrono = "0.4"
 futures-util = "0.3.31"
 thiserror = "2"
 tokio = { version = "1", features = ["time"] }
+
+[dev-dependencies]
+mockito = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
