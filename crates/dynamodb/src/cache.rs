@@ -6,19 +6,19 @@ use chrono::prelude::*;
 use crate::error::Error;
 
 
-pub struct HolderMap<K, V> {
+pub struct CacheMap<K, V> {
     map: HashMap<K, (V, DateTime<Utc>)>,
     client: Client,
     expiration: Duration,
 }
 
-impl<K,V> HolderMap<K, V> 
+impl<K,V> CacheMap<K, V> 
 where
     K: PartialEq + Eq + Hash + Clone,
     V: Clone,
 {
     pub fn new(client: Client, expiration: Duration) -> Self {
-        HolderMap {
+        CacheMap {
             map: HashMap::new(),
             client,
             expiration,
@@ -80,26 +80,26 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_holder_map_new() {
+    async fn test_cache_map_new() {
         let client = create_test_client().await;
         let expiration = Duration::from_secs(60);
-        let holder: HolderMap<String, TestValue> = HolderMap::new(client, expiration);
+        let cache: CacheMap<String, TestValue> = CacheMap::new(client, expiration);
         
-        assert_eq!(holder.map.len(), 0);
-        assert_eq!(holder.expiration, expiration);
+        assert_eq!(cache.map.len(), 0);
+        assert_eq!(cache.expiration, expiration);
     }
 
     #[tokio::test]
-    async fn test_holder_map_get_cache_miss() {
+    async fn test_cache_map_get_cache_miss() {
         let client = create_test_client().await;
         let expiration = Duration::from_secs(60);
-        let mut holder: HolderMap<String, TestValue> = HolderMap::new(client, expiration);
+        let mut cache: CacheMap<String, TestValue> = CacheMap::new(client, expiration);
         
         let key = "test_key".to_string();
         let expected_value = TestValue("test_value".to_string());
         let expected_clone = expected_value.clone();
         
-        let result = holder.get(
+        let result = cache.get(
             &key,
             |_client, _key| async move {
                 Ok(Some(expected_clone))
@@ -108,15 +108,15 @@ mod tests {
         ).await.unwrap();
         
         assert_eq!(result, Some(expected_value.clone()));
-        assert_eq!(holder.map.len(), 1);
-        assert!(holder.map.contains_key(&key));
+        assert_eq!(cache.map.len(), 1);
+        assert!(cache.map.contains_key(&key));
     }
 
     #[tokio::test]
-    async fn test_holder_map_get_cache_hit() {
+    async fn test_cache_map_get_cache_hit() {
         let client = create_test_client().await;
         let expiration = Duration::from_secs(60);
-        let mut holder: HolderMap<String, TestValue> = HolderMap::new(client, expiration);
+        let mut cache: CacheMap<String, TestValue> = CacheMap::new(client, expiration);
         
         let key = "test_key".to_string();
         let expected_value = TestValue("test_value".to_string());
@@ -124,7 +124,7 @@ mod tests {
         
         // First call to populate cache
         let expected_clone = expected_value.clone();
-        let result1 = holder.get(
+        let result1 = cache.get(
             &key,
             |_client, _key| async move {
                 Ok(Some(expected_clone))
@@ -138,7 +138,7 @@ mod tests {
         let call_count = Arc::new(Mutex::new(0));
         let call_count_clone = call_count.clone();
         
-        let result2 = holder.get(
+        let result2 = cache.get(
             &key,
             |_client, _key| {
                 let call_count = call_count_clone.clone();
@@ -156,10 +156,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_holder_map_get_cache_expired() {
+    async fn test_cache_map_get_cache_expired() {
         let client = create_test_client().await;
         let expiration = Duration::from_secs(60);
-        let mut holder: HolderMap<String, TestValue> = HolderMap::new(client, expiration);
+        let mut cache: CacheMap<String, TestValue> = CacheMap::new(client, expiration);
         
         let key = "test_key".to_string();
         let old_value = TestValue("old_value".to_string());
@@ -168,7 +168,7 @@ mod tests {
         
         // First call to populate cache
         let old_value_clone = old_value.clone();
-        let result1 = holder.get(
+        let result1 = cache.get(
             &key,
             |_client, _key| async move {
                 Ok(Some(old_value_clone))
@@ -180,7 +180,7 @@ mod tests {
         
         // Second call with expired cache
         let new_value_clone = new_value.clone();
-        let result2 = holder.get(
+        let result2 = cache.get(
             &key,
             |_client, _key| async move {
                 Ok(Some(new_value_clone))
@@ -192,14 +192,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_holder_map_get_none_value() {
+    async fn test_cache_map_get_none_value() {
         let client = create_test_client().await;
         let expiration = Duration::from_secs(60);
-        let mut holder: HolderMap<String, TestValue> = HolderMap::new(client, expiration);
+        let mut cache: CacheMap<String, TestValue> = CacheMap::new(client, expiration);
         
         let key = "test_key".to_string();
         
-        let result = holder.get(
+        let result = cache.get(
             &key,
             |_client, _key| async move {
                 Ok(None)
@@ -208,18 +208,18 @@ mod tests {
         ).await.unwrap();
         
         assert_eq!(result, None);
-        assert_eq!(holder.map.len(), 0); // Nothing should be cached
+        assert_eq!(cache.map.len(), 0); // Nothing should be cached
     }
 
     #[tokio::test]
-    async fn test_holder_map_get_error() {
+    async fn test_cache_map_get_error() {
         let client = create_test_client().await;
         let expiration = Duration::from_secs(60);
-        let mut holder: HolderMap<String, TestValue> = HolderMap::new(client, expiration);
+        let mut cache: CacheMap<String, TestValue> = CacheMap::new(client, expiration);
         
         let key = "test_key".to_string();
         
-        let result = holder.get(
+        let result = cache.get(
             &key,
             |_client, _key| async move {
                 Err(Error::Invalid("Test error".to_string()))
@@ -228,14 +228,14 @@ mod tests {
         ).await;
         
         assert!(result.is_err());
-        assert_eq!(holder.map.len(), 0); // Nothing should be cached on error
+        assert_eq!(cache.map.len(), 0); // Nothing should be cached on error
     }
 
     #[tokio::test]
-    async fn test_holder_map_multiple_keys() {
+    async fn test_cache_map_multiple_keys() {
         let client = create_test_client().await;
         let expiration = Duration::from_secs(60);
-        let mut holder: HolderMap<String, TestValue> = HolderMap::new(client, expiration);
+        let mut cache: CacheMap<String, TestValue> = CacheMap::new(client, expiration);
         
         let key1 = "key1".to_string();
         let key2 = "key2".to_string();
@@ -244,7 +244,7 @@ mod tests {
         
         // Add first key
         let value1_clone = value1.clone();
-        let result1 = holder.get(
+        let result1 = cache.get(
             &key1,
             |_client, _key| async move {
                 Ok(Some(value1_clone))
@@ -256,7 +256,7 @@ mod tests {
         
         // Add second key
         let value2_clone = value2.clone();
-        let result2 = holder.get(
+        let result2 = cache.get(
             &key2,
             |_client, _key| async move {
                 Ok(Some(value2_clone))
@@ -265,11 +265,11 @@ mod tests {
         ).await.unwrap();
         
         assert_eq!(result2, Some(value2.clone()));
-        assert_eq!(holder.map.len(), 2);
+        assert_eq!(cache.map.len(), 2);
         
         // Verify both keys are cached
-        assert!(holder.map.contains_key(&key1));
-        assert!(holder.map.contains_key(&key2));
+        assert!(cache.map.contains_key(&key1));
+        assert!(cache.map.contains_key(&key2));
     }
 
     #[test]

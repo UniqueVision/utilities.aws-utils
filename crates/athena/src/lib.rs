@@ -1,5 +1,5 @@
 use aws_config::BehaviorVersion;
-use aws_sdk_dynamodb::Client;
+use aws_sdk_athena::Client;
 
 pub mod csv;
 pub mod error;
@@ -7,7 +7,7 @@ pub mod cache;
 pub mod record;
 pub mod table;
 
-pub use aws_sdk_dynamodb;
+pub use aws_sdk_athena;
 
 pub async fn make_client(endpoint_url: Option<String>) -> Client {
     if std::env::var("AWS_ACCESS_KEY_ID").is_err() {
@@ -20,7 +20,7 @@ pub async fn make_client(endpoint_url: Option<String>) -> Client {
         unsafe { std::env::set_var("AWS_REGION", "us-west-2") };
     }
     let config = aws_config::load_defaults(BehaviorVersion::latest()).await;
-    let mut builder = aws_sdk_dynamodb::config::Builder::from(&config);
+    let mut builder = aws_sdk_athena::config::Builder::from(&config);
     if let Some(aws_endpoint_url) = endpoint_url {
         builder = builder.endpoint_url(aws_endpoint_url)
     }

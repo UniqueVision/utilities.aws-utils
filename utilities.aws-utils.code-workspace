@@ -4,6 +4,9 @@
 			"path": "."
 		},
 		{
+			"path": "crates/athena"
+		},
+		{
 			"path": "crates/dynamodb"
 		},
 		{
