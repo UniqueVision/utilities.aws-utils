@@ -1,11 +1,7 @@
 use aws_config::BehaviorVersion;
 use aws_sdk_athena::Client;
 
-pub mod csv;
 pub mod error;
-pub mod cache;
-pub mod record;
-pub mod table;
 
 pub use aws_sdk_athena;
 
