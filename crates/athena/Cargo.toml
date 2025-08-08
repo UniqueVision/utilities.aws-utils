@@ -2,16 +2,34 @@
 name = "aws_utils_athena"
 version = "0.1.0"
 edition = "2024"
+description = "AWS Athena client utilities for Rust with query execution, streaming results, and comprehensive error handling"
+readme = "README.md"
+repository = "https://github.com/UniqueVision/utilities.aws-utils"
+homepage = "https://github.com/UniqueVision/utilities.aws-utils/tree/main/crates/athena"
+documentation = "https://docs.rs/aws_utils_athena"
+license = "MIT OR Apache-2.0"
+keywords = ["aws", "athena", "async", "query", "streaming"]
+categories = ["api-bindings", "asynchronous", "database"]
 
 [dependencies]
 aws-config = { version = "1.8", features = ["behavior-version-latest"] }
-aws-sdk-athena = "1"
-aws-smithy-types-convert = { version = "0.60.9", features = ["convert-streams"] }
+aws-sdk-athena = "1.84"
+aws-smithy-types-convert = { version = "0.60", features = ["convert-streams"] }
 chrono = "0.4"
-futures-util = "0.3.31"
-thiserror = "2"
-tokio = { version = "1", features = ["time"] }
+futures-util = "0.3"
+thiserror = "2.0"
+tokio = { version = "1.0", features = ["time"] }
 
 [dev-dependencies]
-mockito = "1"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+mockito = "1.0"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
