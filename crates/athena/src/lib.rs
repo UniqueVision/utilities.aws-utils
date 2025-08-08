@@ -8,7 +8,7 @@ use aws_sdk_athena::Client;
 
 pub mod error;
 pub mod query;
-pub mod timeout;
+pub mod stream;
 
 pub use aws_sdk_athena;
 

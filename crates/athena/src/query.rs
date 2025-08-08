@@ -1,7 +1,7 @@
 use aws_sdk_athena::{
     Client,
     operation::{
-        get_query_execution::GetQueryExecutionOutput,
+        get_query_execution::GetQueryExecutionOutput, get_query_results::GetQueryResultsOutput,
         start_query_execution::StartQueryExecutionOutput,
     },
     types::{QueryExecutionContext, ResultConfiguration},
@@ -32,6 +32,20 @@ pub async fn get_query_execution(
     client
         .get_query_execution()
         .set_query_execution_id(execution_id.map(Into::into))
+        .send()
+        .await
+        .map_err(from_aws_sdk_error)
+}
+
+pub async fn get_query_results(
+    client: &Client,
+    execution_id: Option<impl Into<String>>,
+    next_token: Option<impl Into<String>>,
+) -> Result<GetQueryResultsOutput, Error> {
+    client
+        .get_query_results()
+        .set_query_execution_id(execution_id.map(Into::into))
+        .set_next_token(next_token.map(Into::into))
         .send()
         .await
         .map_err(from_aws_sdk_error)
