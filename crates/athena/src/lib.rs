@@ -1,39 +1,36 @@
-use std::time::Duration;
-
-use aws_config::{
-    BehaviorVersion,
-    timeout::{TimeoutConfig, TimeoutConfigBuilder},
-};
-use aws_sdk_athena::Client;
-
 pub mod error;
 pub mod query;
 pub mod wait;
+use std::time::Duration;
 
+use aws_config::{timeout::{TimeoutConfig, TimeoutConfigBuilder}, BehaviorVersion};
 pub use aws_sdk_athena;
+use aws_sdk_athena::Client;
 
 pub async fn make_client_with_timeout_default(endpoint_url: Option<String>) -> Client {
     make_client_with_timeout(
         endpoint_url,
-        Duration::from_secs(60),
-        Duration::from_secs(55),
-        Duration::from_secs(50),
+        Some(Duration::from_secs(3100)),
+        Some(Duration::from_secs(60)),
+        Some(Duration::from_secs(55)),
+        Some(Duration::from_secs(50)),
     )
     .await
 }
 
 pub async fn make_client_with_timeout(
     endpoint_url: Option<String>,
-    operation_timeout: Duration,
-    operation_attempt_timeout: Duration,
-    connect_timeout: Duration,
+    connect_timeout: Option<Duration>,
+    operation_timeout: Option<Duration>,
+    operation_attempt_timeout: Option<Duration>,
+    read_timeout: Option<Duration>,
 ) -> Client {
-    let timeout_config = TimeoutConfigBuilder::new()
-        .operation_timeout(operation_timeout)
-        .operation_attempt_timeout(operation_attempt_timeout)
-        .connect_timeout(connect_timeout)
-        .build();
-    make_client(endpoint_url, Some(timeout_config)).await
+    let mut timeout_config = TimeoutConfigBuilder::new();
+        timeout_config.set_connect_timeout(connect_timeout)
+        .set_operation_timeout(operation_timeout)
+        .set_operation_attempt_timeout(operation_attempt_timeout)
+        .set_read_timeout(read_timeout);
+    make_client(endpoint_url, Some(timeout_config.build())).await
 }
 
 pub async fn make_client(
