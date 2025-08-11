@@ -1,12 +1,17 @@
 [package]
-name = "firehose"
+name = "aws-firehose-utils"
 version = "0.1.0"
 edition = "2024"
+description = "AWS Kinesis Data Firehose utilities for Rust"
+documentation = "https://docs.rs/aws-firehose-utils"
+homepage = "https://github.com/UniqueVision/utilities.aws-utils"
+repository = "https://github.com/UniqueVision/utilities.aws-utils"
+readme = "README.md"
+keywords = ["aws", "firehose", "kinesis", "streaming", "data"]
+categories = ["api-bindings", "asynchronous", "network-programming"]
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 aws-config = { version = "1.8", features = ["behavior-version-latest"] }
 aws-sdk-firehose = "1.84"
-aws-smithy-types-convert = { version = "0.60", features = ["convert-streams"] }
-chrono = "0.4"
-futures-util = "0.3"
 thiserror = "2.0"
