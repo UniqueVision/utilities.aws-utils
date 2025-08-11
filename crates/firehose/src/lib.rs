@@ -1,4 +1,5 @@
 pub mod error;
+pub mod firehose;
 use std::time::Duration;
 
 use aws_config::{timeout::{TimeoutConfig, TimeoutConfigBuilder}, BehaviorVersion};
