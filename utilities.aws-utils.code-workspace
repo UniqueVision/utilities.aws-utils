@@ -10,6 +10,9 @@
 			"path": "crates/dynamodb"
 		},
 		{
+			"path": "crates/firehose"
+		},
+		{
 			"path": "crates/kinesis_data_streams"
 		},
 		{

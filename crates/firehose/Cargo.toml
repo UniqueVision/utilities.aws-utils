@@ -1,0 +1,12 @@
+[package]
+name = "firehose"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+aws-config = { version = "1.8", features = ["behavior-version-latest"] }
+aws-sdk-firehose = "1.84"
+aws-smithy-types-convert = { version = "0.60", features = ["convert-streams"] }
+chrono = "0.4"
+futures-util = "0.3"
+thiserror = "2.0"
