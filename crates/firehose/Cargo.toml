@@ -1,6 +1,6 @@
 [package]
-name = "aws-firehose-utils"
-version = "0.1.1"
+name = "aws_utils_firehose"
+version = "0.1.0"
 edition = "2024"
 description = "AWS Kinesis Data Firehose utilities for Rust"
 documentation = "https://docs.rs/aws-firehose-utils"
@@ -13,5 +13,5 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 aws-config = { version = "1.8", features = ["behavior-version-latest"] }
-aws-sdk-firehose = "1.84"
+aws-sdk-firehose = "1"
 thiserror = "2.0"

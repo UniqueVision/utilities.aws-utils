@@ -2,10 +2,12 @@ pub mod error;
 pub mod firehose;
 use std::time::Duration;
 
-use aws_config::{timeout::{TimeoutConfig, TimeoutConfigBuilder}, BehaviorVersion};
+use aws_config::{
+    BehaviorVersion,
+    timeout::{TimeoutConfig, TimeoutConfigBuilder},
+};
 pub use aws_sdk_firehose;
 use aws_sdk_firehose::Client;
-
 
 pub async fn make_client_with_timeout_default(endpoint_url: Option<String>) -> Client {
     make_client_with_timeout(
@@ -26,7 +28,8 @@ pub async fn make_client_with_timeout(
     read_timeout: Option<Duration>,
 ) -> Client {
     let mut timeout_config = TimeoutConfigBuilder::new();
-        timeout_config.set_connect_timeout(connect_timeout)
+    timeout_config
+        .set_connect_timeout(connect_timeout)
         .set_operation_timeout(operation_timeout)
         .set_operation_attempt_timeout(operation_attempt_timeout)
         .set_read_timeout(read_timeout);
