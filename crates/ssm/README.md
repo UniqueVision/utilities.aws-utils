@@ -24,12 +24,12 @@ aws_utils_ssm = "0.1.0"
 ### Basic Example
 
 ```rust
-use aws_utils_ssm::{make_client, ssm::get_parameter};
+use aws_utils_ssm::{make_client_with_timeout_default, ssm::get_parameter};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create SSM client
-    let client = make_client(None).await;
+    // Create SSM client with default timeout configuration
+    let client = make_client_with_timeout_default(None).await;
     
     // Get parameter value
     let value = get_parameter(&client, "/my/parameter/name").await?;
@@ -42,12 +42,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Using Custom Endpoint
 
 ```rust
-use aws_utils_ssm::{make_client, ssm::get_parameter};
+use aws_utils_ssm::{make_client_with_timeout_default, ssm::get_parameter};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create client with custom endpoint (e.g., LocalStack)
-    let client = make_client(Some("http://localhost:4566".to_string())).await;
+    let client = make_client_with_timeout_default(Some("http://localhost:4566".to_string())).await;
     
     let value = get_parameter(&client, "/test/parameter").await?;
     println!("Parameter value: {}", value);
@@ -59,11 +59,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Getting Raw Parameter Output
 
 ```rust
-use aws_utils_ssm::{make_client, ssm::get_parameter_raw};
+use aws_utils_ssm::{make_client_with_timeout_default, ssm::get_parameter_raw};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = make_client(None).await;
+    let client = make_client_with_timeout_default(None).await;
     
     // Get full parameter information
     let output = get_parameter_raw(&client, Some("/my/parameter"), Some(true)).await?;
@@ -78,15 +78,88 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### Using Custom Timeout Configuration
+
+```rust
+use std::time::Duration;
+use aws_utils_ssm::{make_client_with_timeout, ssm::get_parameter};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create client with custom timeout settings
+    let client = make_client_with_timeout(
+        None,
+        Some(Duration::from_secs(5)),      // 5 second connect timeout
+        Some(Duration::from_secs(30)),     // 30 second operation timeout
+        Some(Duration::from_secs(25)),     // 25 second operation attempt timeout
+        Some(Duration::from_secs(20)),     // 20 second read timeout
+    ).await;
+    
+    let value = get_parameter(&client, "/my/parameter").await?;
+    println!("Parameter value: {}", value);
+    
+    Ok(())
+}
+```
+
+### Using with TimeoutConfig
+
+```rust
+use aws_config::timeout::{TimeoutConfig, TimeoutConfigBuilder};
+use aws_utils_ssm::{make_client, ssm::get_parameter};
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Build custom timeout configuration
+    let timeout_config = TimeoutConfigBuilder::new()
+        .connect_timeout(Duration::from_secs(10))
+        .operation_timeout(Duration::from_secs(120))
+        .build();
+    
+    // Create client with custom timeout configuration
+    let client = make_client(None, Some(timeout_config)).await;
+    
+    let value = get_parameter(&client, "/my/parameter").await?;
+    println!("Parameter value: {}", value);
+    
+    Ok(())
+}
+```
+
 ## API Reference
 
 ### Functions
 
-#### `make_client(endpoint_url: Option<String>) -> Client`
+#### `make_client_with_timeout_default(endpoint_url: Option<String>) -> Client`
 
-Creates an AWS SSM client with optional custom endpoint URL.
+Creates an AWS SSM client with default timeout configuration.
 
 - `endpoint_url`: Optional custom endpoint URL for testing (e.g., LocalStack)
+- Returns: Configured AWS SSM Client with default timeouts
+- Default timeouts:
+  - Connect timeout: 3100 seconds
+  - Operation timeout: 60 seconds
+  - Operation attempt timeout: 55 seconds
+  - Read timeout: 50 seconds
+
+#### `make_client_with_timeout(endpoint_url: Option<String>, connect_timeout: Option<Duration>, operation_timeout: Option<Duration>, operation_attempt_timeout: Option<Duration>, read_timeout: Option<Duration>) -> Client`
+
+Creates an AWS SSM client with custom timeout configuration.
+
+- `endpoint_url`: Optional custom endpoint URL for testing (e.g., LocalStack)
+- `connect_timeout`: Optional timeout for establishing connections
+- `operation_timeout`: Optional timeout for entire operations
+- `operation_attempt_timeout`: Optional timeout for individual operation attempts
+- `read_timeout`: Optional timeout for reading responses
+- Returns: Configured AWS SSM Client with custom timeouts
+
+#### `make_client(endpoint_url: Option<String>, timeout_config: Option<TimeoutConfig>) -> Client`
+
+Creates an AWS SSM client with optional custom endpoint URL and timeout configuration.
+
+- `endpoint_url`: Optional custom endpoint URL for testing (e.g., LocalStack)
+- `timeout_config`: Optional timeout configuration
 - Returns: Configured AWS SSM Client
 
 #### `get_parameter(client: &Client, name: &str) -> Result<String, Error>`

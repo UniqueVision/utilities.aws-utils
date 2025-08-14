@@ -1,6 +1,6 @@
 [package]
 name = "aws_utils_ssm"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "AWS SSM utilities for getting parameter values from AWS Systems Manager Parameter Store"
 license = "MIT"

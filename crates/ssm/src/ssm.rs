@@ -36,7 +36,7 @@ mod tests {
         }
 
         let endpoint_url = std::env::var("SSM_ENDPOINT_URL").ok();
-        let client = crate::make_client(endpoint_url).await;
+        let client = crate::make_client(endpoint_url, None).await;
 
         // テスト用のパラメータ名を環境変数から取得
         let parameter_name = std::env::var("TEST_SSM_PARAMETER_NAME")
@@ -66,7 +66,7 @@ mod tests {
         }
 
         let endpoint_url = std::env::var("SSM_ENDPOINT_URL").ok();
-        let client = crate::make_client(endpoint_url).await;
+        let client = crate::make_client(endpoint_url, None).await;
 
         let parameter_name = std::env::var("TEST_SSM_PARAMETER_NAME")
             .unwrap_or_else(|_| "/test/parameter".to_string());
