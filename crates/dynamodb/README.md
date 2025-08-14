@@ -25,13 +25,31 @@ aws_utils_dynamodb = { path = "crates/dynamodb" }
 ### Creating a Client
 
 ```rust
-use aws_utils_dynamodb::make_client;
+use aws_utils_dynamodb::{make_client, make_client_with_timeout_default, make_client_with_timeout};
+use std::time::Duration;
 
-// Create client with default AWS configuration
-let client = make_client(None).await;
+// Create client with default timeout settings
+let client = make_client_with_timeout_default(None).await;
 
-// Create client with custom endpoint (e.g., for local DynamoDB)
-let client = make_client(Some("http://localhost:8000".to_string())).await;
+// Create client with custom timeout settings
+let client = make_client_with_timeout(
+    None, // endpoint_url
+    Some(Duration::from_secs(3100)), // connect_timeout
+    Some(Duration::from_secs(60)),   // operation_timeout
+    Some(Duration::from_secs(55)),   // operation_attempt_timeout
+    Some(Duration::from_secs(50)),   // read_timeout
+).await;
+
+// Create client with custom endpoint and default timeout
+let client = make_client_with_timeout_default(
+    Some("http://localhost:8000".to_string())
+).await;
+
+// Create client without timeout configuration (legacy)
+let client = make_client(None, None).await;
+
+// Create client with custom endpoint and no timeout (legacy)
+let client = make_client(Some("http://localhost:8000".to_string()), None).await;
 ```
 
 ### Record Operations
