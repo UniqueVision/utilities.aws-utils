@@ -5,7 +5,9 @@ A utility crate for AWS S3 client operations.
 ## Features
 
 ### Client Setup
-- `make_client` - Create an S3 client with optional endpoint URL configuration
+- `make_client_with_timeout_default` - Create an S3 client with default timeout settings
+- `make_client_with_timeout` - Create an S3 client with custom timeout settings
+- `make_client` - Create an S3 client with optional endpoint URL and timeout configuration
 
 ### Bucket Operations
 - `bucket::create_bucket` - Create a new S3 bucket
@@ -36,10 +38,10 @@ A utility crate for AWS S3 client operations.
 ## Usage Examples
 
 ```rust
-use aws_utils_s3::{bucket, object, presigned, make_client};
+use aws_utils_s3::{bucket, object, presigned, make_client_with_timeout_default};
 
-// Create client
-let client = make_client(None).await;
+// Create client with default timeout settings
+let client = make_client_with_timeout_default(None).await;
 
 // Bucket operations
 bucket::create_bucket(&client, "my-bucket").await?;
@@ -105,6 +107,36 @@ let url = presigned::presigned_url(&presigned);
 
 // Batch delete objects with prefix
 object::delete_objects(&client, "my-bucket", Some("temp/")).await?;
+```
+
+## Timeout Configuration
+
+```rust
+use aws_utils_s3::{make_client, make_client_with_timeout, make_client_with_timeout_default};
+use std::time::Duration;
+
+// Use default timeout settings (recommended)
+let client = make_client_with_timeout_default(None).await;
+
+// Use custom timeout settings
+let client = make_client_with_timeout(
+    None, // endpoint_url
+    Some(Duration::from_secs(3100)), // connect_timeout
+    Some(Duration::from_secs(60)),   // operation_timeout
+    Some(Duration::from_secs(55)),   // operation_attempt_timeout
+    Some(Duration::from_secs(50)),   // read_timeout
+).await;
+
+// Use custom endpoint with default timeout settings
+let client = make_client_with_timeout_default(
+    Some("http://localhost:4566".to_string())
+).await;
+
+// Use legacy client without timeout configuration
+let client = make_client(None, None).await;
+
+// Use custom endpoint and no timeout (legacy)
+let client = make_client(Some("http://localhost:4566".to_string()), None).await;
 ```
 
 ## Error Handling

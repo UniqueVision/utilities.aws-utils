@@ -3,10 +3,8 @@ use std::path::Path;
 use aws_sdk_s3::{
     Client,
     operation::{
-        copy_object::CopyObjectOutput,
-        delete_object::DeleteObjectOutput,
-        get_object::GetObjectOutput,
-        put_object::PutObjectOutput,
+        copy_object::CopyObjectOutput, delete_object::DeleteObjectOutput,
+        get_object::GetObjectOutput, put_object::PutObjectOutput,
     },
     primitives::ByteStream,
     types::Object,
