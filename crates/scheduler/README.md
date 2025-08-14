@@ -29,15 +29,30 @@ aws_utils_scheduler = "0.1.0"
 ### Creating a Client
 
 ```rust
-use aws_utils_scheduler::scheduler;
+use aws_utils_scheduler;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a client with default AWS configuration
-    let client = scheduler::make_client(None).await;
+    // Create a client with default timeout configuration
+    let client = aws_utils_scheduler::make_client_with_timeout_default(None).await;
     
-    // Or with a custom endpoint
-    let client = scheduler::make_client(Some("http://localhost:4566".to_string())).await;
+    // Or with a custom endpoint and default timeouts
+    let client = aws_utils_scheduler::make_client_with_timeout_default(
+        Some("http://localhost:4566".to_string())
+    ).await;
+    
+    // Or with custom timeout settings
+    let client = aws_utils_scheduler::make_client_with_timeout(
+        None,
+        Some(Duration::from_secs(30)),   // connect timeout
+        Some(Duration::from_secs(120)),  // operation timeout
+        Some(Duration::from_secs(60)),   // operation attempt timeout
+        Some(Duration::from_secs(30)),   // read timeout
+    ).await;
+    
+    // Or without timeout configuration
+    let client = aws_utils_scheduler::make_client(None, None).await;
     
     Ok(())
 }
@@ -49,18 +64,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust
 use aws_utils_scheduler::{scheduler, builder::AtExpressionBuilder};
+use aws_sdk_scheduler::types::{Target, FlexibleTimeWindow, FlexibleTimeWindowMode};
 use chrono::{Utc, Duration};
 
 let future_time = Utc::now() + Duration::hours(1);
 let at_expression = AtExpressionBuilder::new(future_time).build()?;
 
+let target = Target::builder()
+    .arn("arn:aws:lambda:us-east-1:123456789012:function:MyFunction")
+    .role_arn("arn:aws:iam::123456789012:role/MyRole")
+    .build()
+    .unwrap();
+
+let flexible_window = FlexibleTimeWindow::builder()
+    .mode(FlexibleTimeWindowMode::Off)
+    .build()
+    .unwrap();
+
 scheduler::create_schedule(
     &client,
     "my-schedule",
+    None,  // group_name
     &at_expression,
-    "arn:aws:lambda:us-east-1:123456789012:function:MyFunction",
-    "arn:aws:iam::123456789012:role/MyRole",
-    None,
+    None,  // start_date
+    None,  // end_date
+    None,  // description
+    None,  // timezone
+    None,  // state
+    None,  // kms_key_arn
+    Some(target),
+    Some(flexible_window),
+    None,  // client_token
+    None,  // action_after_completion
 ).await?;
 ```
 
@@ -68,16 +103,36 @@ scheduler::create_schedule(
 
 ```rust
 use aws_utils_scheduler::builder::{RateExpressionBuilder, RateUnit};
+use aws_sdk_scheduler::types::{Target, FlexibleTimeWindow, FlexibleTimeWindowMode};
 
 let rate_expression = RateExpressionBuilder::new(5, RateUnit::Minutes).build()?;
+
+let target = Target::builder()
+    .arn("arn:aws:lambda:us-east-1:123456789012:function:MyFunction")
+    .role_arn("arn:aws:iam::123456789012:role/MyRole")
+    .build()
+    .unwrap();
+
+let flexible_window = FlexibleTimeWindow::builder()
+    .mode(FlexibleTimeWindowMode::Off)
+    .build()
+    .unwrap();
 
 scheduler::create_schedule(
     &client,
     "my-recurring-schedule",
+    None,  // group_name
     &rate_expression,
-    "arn:aws:lambda:us-east-1:123456789012:function:MyFunction",
-    "arn:aws:iam::123456789012:role/MyRole",
-    None,
+    None,  // start_date
+    None,  // end_date
+    None,  // description
+    None,  // timezone
+    None,  // state
+    None,  // kms_key_arn
+    Some(target),
+    Some(flexible_window),
+    None,  // client_token
+    None,  // action_after_completion
 ).await?;
 ```
 
@@ -85,6 +140,7 @@ scheduler::create_schedule(
 
 ```rust
 use aws_utils_scheduler::builder::CronExpressionBuilder;
+use aws_sdk_scheduler::types::{Target, FlexibleTimeWindow, FlexibleTimeWindowMode};
 
 let cron_expression = CronExpressionBuilder::new()
     .minutes("0")
@@ -94,13 +150,32 @@ let cron_expression = CronExpressionBuilder::new()
     .days_of_week("MON-FRI")
     .build()?;
 
+let target = Target::builder()
+    .arn("arn:aws:lambda:us-east-1:123456789012:function:MyFunction")
+    .role_arn("arn:aws:iam::123456789012:role/MyRole")
+    .build()
+    .unwrap();
+
+let flexible_window = FlexibleTimeWindow::builder()
+    .mode(FlexibleTimeWindowMode::Off)
+    .build()
+    .unwrap();
+
 scheduler::create_schedule(
     &client,
     "weekday-noon-schedule",
+    None,  // group_name
     &cron_expression,
-    "arn:aws:lambda:us-east-1:123456789012:function:MyFunction",
-    "arn:aws:iam::123456789012:role/MyRole",
-    None,
+    None,  // start_date
+    None,  // end_date
+    None,  // description
+    None,  // timezone
+    None,  // state
+    None,  // kms_key_arn
+    Some(target),
+    Some(flexible_window),
+    None,  // client_token
+    None,  // action_after_completion
 ).await?;
 ```
 
@@ -111,7 +186,12 @@ scheduler::create_schedule(
 ```rust
 use futures_util::TryStreamExt;
 
-let stream = scheduler::list_schedules_stream(&client, None, None);
+let stream = scheduler::list_schedules_stream(
+    &client,
+    None::<String>,  // name_prefix
+    None::<String>,  // group_name
+    None,            // state
+);
 futures_util::pin_mut!(stream);
 
 while let Some(schedule) = stream.try_next().await? {
@@ -122,7 +202,12 @@ while let Some(schedule) = stream.try_next().await? {
 #### Batch Listing
 
 ```rust
-let schedules = scheduler::list_schedules(&client, None, None, None).await?;
+let schedules = scheduler::list_schedules_all(
+    &client,
+    None::<String>,  // name_prefix
+    None::<String>,  // group_name
+    None,            // state
+).await?;
 for schedule in schedules {
     println!("Schedule: {:?}", schedule.name());
 }
@@ -131,21 +216,51 @@ for schedule in schedules {
 ### Other Operations
 
 ```rust
+use aws_sdk_scheduler::types::{Target, FlexibleTimeWindow, FlexibleTimeWindowMode};
+
 // Get schedule details
-let schedule = scheduler::get_schedule(&client, "my-schedule", None).await?;
+let schedule = scheduler::get_scheduler(
+    &client,
+    "my-schedule",
+    None::<String>,  // group_name
+).await?;
 
 // Update a schedule
+let target = Target::builder()
+    .arn("arn:aws:lambda:us-east-1:123456789012:function:NewFunction")
+    .role_arn("arn:aws:iam::123456789012:role/MyRole")
+    .build()
+    .unwrap();
+
+let flexible_window = FlexibleTimeWindow::builder()
+    .mode(FlexibleTimeWindowMode::Off)
+    .build()
+    .unwrap();
+
 scheduler::update_schedule(
     &client,
     "my-schedule",
+    None,  // group_name
     &new_expression,
-    "arn:aws:lambda:us-east-1:123456789012:function:NewFunction",
-    "arn:aws:iam::123456789012:role/MyRole",
-    None,
+    None,  // start_date
+    None,  // end_date
+    None,  // description
+    None,  // timezone
+    None,  // state
+    None,  // kms_key_arn
+    Some(target),
+    Some(flexible_window),
+    None,  // client_token
+    None,  // action_after_completion
 ).await?;
 
 // Delete a schedule
-scheduler::delete_schedule(&client, "my-schedule", None).await?;
+scheduler::delete_schedule(
+    &client,
+    "my-schedule",
+    None::<String>,  // group_name
+    None::<String>,  // client_token
+).await?;
 ```
 
 ## Schedule Expression Builders
@@ -191,7 +306,22 @@ The crate provides comprehensive error handling through the `SchedulerError` enu
 ```rust
 use aws_utils_scheduler::error::SchedulerError;
 
-match scheduler::create_schedule(&client, name, expr, target, role, group).await {
+match scheduler::create_schedule(
+    &client,
+    name,
+    group,
+    expr,
+    None,  // start_date
+    None,  // end_date
+    None,  // description
+    None,  // timezone
+    None,  // state
+    None,  // kms_key_arn
+    Some(target),
+    Some(flexible_window),
+    None,  // client_token
+    None,  // action_after_completion
+).await {
     Ok(_) => println!("Schedule created successfully"),
     Err(SchedulerError::Aws(e)) => eprintln!("AWS error: {}", e),
     Err(SchedulerError::InvalidScheduleExpression) => eprintln!("Invalid expression"),
@@ -201,7 +331,8 @@ match scheduler::create_schedule(&client, name, expr, target, role, group).await
 
 ## Important Notes
 
-- The `make_client` function sets dummy AWS credentials if they're not already present in the environment. This is useful for local development with tools like LocalStack.
+- All client creation functions (`make_client`, `make_client_with_timeout`, `make_client_with_timeout_default`) set dummy AWS credentials if they're not already present in the environment. This is useful for local development with tools like LocalStack.
+- The `make_client_with_timeout_default` function provides reasonable default timeout values (connect: 3100s, operation: 60s, operation attempt: 55s, read: 50s) suitable for most use cases.
 - All schedule names must be unique within a schedule group.
 - The IAM role must have the necessary permissions to invoke the target.
 

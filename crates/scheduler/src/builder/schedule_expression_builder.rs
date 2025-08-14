@@ -204,12 +204,12 @@ impl CronExpressionBuilder {
         }
 
         // Try to parse as number
-        if let Ok(value) = field.parse::<i32>() {
-            if value < min || value > max {
-                return Err(Error::ValidationError(format!(
-                    "{name} must be between {min} and {max}"
-                )));
-            }
+        if let Ok(value) = field.parse::<i32>()
+            && (value < min || value > max)
+        {
+            return Err(Error::ValidationError(format!(
+                "{name} must be between {min} and {max}"
+            )));
         }
 
         Ok(())
