@@ -209,103 +209,101 @@ impl CreateQueueAttributeBuilder {
 
     pub fn build(self) -> Result<std::collections::HashMap<QueueAttributeName, String>, Error> {
         // Validate all attributes
-        if let Some(value) = self.delay_seconds {
-            if value > 900 {
-                return Err(Error::ValidationError(
-                    "DelaySeconds must be between 0 and 900 seconds.".to_string(),
-                ));
-            }
+        if let Some(value) = self.delay_seconds
+            && value > 900
+        {
+            return Err(Error::ValidationError(
+                "DelaySeconds must be between 0 and 900 seconds.".to_string(),
+            ));
         }
 
-        if let Some(value) = self.maximum_message_size {
-            if !(1024..=262144).contains(&value) {
-                return Err(Error::ValidationError(
-                    "MaximumMessageSize must be between 1024 and 262144 bytes.".to_string(),
-                ));
-            }
+        if let Some(value) = self.maximum_message_size
+            && !(1024..=262144).contains(&value)
+        {
+            return Err(Error::ValidationError(
+                "MaximumMessageSize must be between 1024 and 262144 bytes.".to_string(),
+            ));
         }
 
-        if let Some(value) = self.message_retention_period {
-            if !(60..=1209600).contains(&value) {
-                return Err(Error::ValidationError(
-                    "MessageRetentionPeriod must be between 60 and 1209600 seconds.".to_string(),
-                ));
-            }
+        if let Some(value) = self.message_retention_period
+            && !(60..=1209600).contains(&value)
+        {
+            return Err(Error::ValidationError(
+                "MessageRetentionPeriod must be between 60 and 1209600 seconds.".to_string(),
+            ));
         }
 
-        if let Some(value) = self.receive_message_wait_time_seconds {
-            if value > 20 {
-                return Err(Error::ValidationError(
-                    "ReceiveMessageWaitTimeSeconds must be between 0 and 20 seconds.".to_string(),
-                ));
-            }
+        if let Some(value) = self.receive_message_wait_time_seconds
+            && value > 20
+        {
+            return Err(Error::ValidationError(
+                "ReceiveMessageWaitTimeSeconds must be between 0 and 20 seconds.".to_string(),
+            ));
         }
 
-        if let Some(value) = self.visibility_timeout {
-            if value > 43200 {
-                return Err(Error::ValidationError(
-                    "VisibilityTimeout must be between 0 and 43200 seconds.".to_string(),
-                ));
-            }
+        if let Some(value) = self.visibility_timeout
+            && value > 43200
+        {
+            return Err(Error::ValidationError(
+                "VisibilityTimeout must be between 0 and 43200 seconds.".to_string(),
+            ));
         }
 
-        if let Some(value) = self.kms_data_key_reuse_period_seconds {
-            if !(60..=86400).contains(&value) {
-                return Err(Error::ValidationError(
-                    "KmsDataKeyReusePeriodSeconds must be between 60 and 86400 seconds."
-                        .to_string(),
-                ));
-            }
+        if let Some(value) = self.kms_data_key_reuse_period_seconds
+            && !(60..=86400).contains(&value)
+        {
+            return Err(Error::ValidationError(
+                "KmsDataKeyReusePeriodSeconds must be between 60 and 86400 seconds.".to_string(),
+            ));
         }
 
         // Validate RedrivePolicy
-        if let Some(ref redrive_policy) = self.redrive_policy {
-            if !(1..=1000).contains(&redrive_policy.max_receive_count) {
-                return Err(Error::ValidationError(
-                    "maxReceiveCount must be between 1 and 1000.".to_string(),
-                ));
-            }
+        if let Some(ref redrive_policy) = self.redrive_policy
+            && !(1..=1000).contains(&redrive_policy.max_receive_count)
+        {
+            return Err(Error::ValidationError(
+                "maxReceiveCount must be between 1 and 1000.".to_string(),
+            ));
         }
 
         // Validate RedriveAllowPolicy
-        if let Some(ref redrive_allow_policy) = self.redrive_allow_policy {
-            if matches!(
+        if let Some(ref redrive_allow_policy) = self.redrive_allow_policy
+            && matches!(
                 redrive_allow_policy.redrive_permission,
                 RedrivePermission::ByQueue
-            ) {
-                if let Some(ref arns) = redrive_allow_policy.source_queue_arns {
-                    if arns.is_empty() {
-                        return Err(Error::ValidationError(
-                            "sourceQueueArns cannot be empty when using byQueue permission."
-                                .to_string(),
-                        ));
-                    }
-                    if arns.len() > 10 {
-                        return Err(Error::ValidationError(
-                            "sourceQueueArns cannot contain more than 10 queue ARNs.".to_string(),
-                        ));
-                    }
-                } else {
+            )
+        {
+            if let Some(ref arns) = redrive_allow_policy.source_queue_arns {
+                if arns.is_empty() {
                     return Err(Error::ValidationError(
-                        "sourceQueueArns must be provided when using byQueue permission."
+                        "sourceQueueArns cannot be empty when using byQueue permission."
                             .to_string(),
                     ));
                 }
+                if arns.len() > 10 {
+                    return Err(Error::ValidationError(
+                        "sourceQueueArns cannot contain more than 10 queue ARNs.".to_string(),
+                    ));
+                }
+            } else {
+                return Err(Error::ValidationError(
+                    "sourceQueueArns must be provided when using byQueue permission.".to_string(),
+                ));
             }
         }
 
         // Validate FifoThroughputLimit and DeduplicationScope combination
-        if let Some(ref fifo_limit) = self.fifo_throughput_limit {
-            if matches!(fifo_limit, FifoThroughputLimit::PerMessageGroupId) {
-                match self.deduplication_scope {
-                    Some(DeduplicationScope::MessageGroup) => {
-                        // Valid combination
-                    }
-                    _ => {
-                        return Err(Error::ValidationError(
+        if let Some(ref fifo_limit) = self.fifo_throughput_limit
+            && matches!(fifo_limit, FifoThroughputLimit::PerMessageGroupId)
+        {
+            match self.deduplication_scope {
+                Some(DeduplicationScope::MessageGroup) => {
+                    // Valid combination
+                }
+                _ => {
+                    return Err(Error::ValidationError(
                             "FifoThroughputLimit.PerMessageGroupId requires DeduplicationScope.MessageGroup".to_string()
                         ));
-                    }
                 }
             }
         }
@@ -336,15 +334,15 @@ impl CreateQueueAttributeBuilder {
         if let Some(value) = self.visibility_timeout {
             attributes.insert(QueueAttributeName::VisibilityTimeout, value.to_string());
         }
-        if let Some(value) = self.redrive_policy {
-            if let Ok(json) = value.to_json() {
-                attributes.insert(QueueAttributeName::RedrivePolicy, json);
-            }
+        if let Some(value) = self.redrive_policy
+            && let Ok(json) = value.to_json()
+        {
+            attributes.insert(QueueAttributeName::RedrivePolicy, json);
         }
-        if let Some(value) = self.redrive_allow_policy {
-            if let Ok(json) = value.to_json() {
-                attributes.insert(QueueAttributeName::RedriveAllowPolicy, json);
-            }
+        if let Some(value) = self.redrive_allow_policy
+            && let Ok(json) = value.to_json()
+        {
+            attributes.insert(QueueAttributeName::RedriveAllowPolicy, json);
         }
         if let Some(value) = self.content_based_deduplication {
             attributes.insert(

@@ -21,20 +21,86 @@ Add this to your `Cargo.toml`:
 aws_utils_sqs = "0.1.0"
 ```
 
+## Client Creation Functions
+
+The library provides three functions for creating SQS clients with different timeout configurations:
+
+### `make_client_with_timeout_default(endpoint_url: Option<String>) -> Client`
+
+Creates an SQS client with default timeout settings optimized for typical SQS operations.
+
+**Default timeout values:**
+- Connect timeout: 3100 seconds
+- Operation timeout: 60 seconds
+- Operation attempt timeout: 55 seconds
+- Read timeout: 50 seconds
+
+### `make_client_with_timeout(...) -> Client`
+
+Creates an SQS client with custom timeout settings. Accepts:
+- `endpoint_url`: Optional custom endpoint URL
+- `connect_timeout`: Optional timeout for establishing connections
+- `operation_timeout`: Optional timeout for entire operations
+- `operation_attempt_timeout`: Optional timeout for individual operation attempts
+- `read_timeout`: Optional timeout for reading responses
+
+### `make_client(endpoint_url: Option<String>, timeout_config: Option<TimeoutConfig>) -> Client`
+
+Creates an SQS client with optional custom endpoint URL and timeout configuration. This is the most flexible option when you need fine-grained control over timeout settings.
+
 ## Usage
 
 ### Creating a Client
 
 ```rust
-use aws_utils_sqs::make_client;
+use aws_utils_sqs::make_client_with_timeout_default;
 
 #[tokio::main]
 async fn main() {
-    // Create a client with default AWS configuration
-    let client = make_client(None).await;
+    // Create a client with default timeout configuration
+    let client = make_client_with_timeout_default(None).await;
     
     // Or with a custom endpoint (e.g., for LocalStack)
-    let client = make_client(Some("http://localhost:4566".to_string())).await;
+    let client = make_client_with_timeout_default(Some("http://localhost:4566".to_string())).await;
+}
+```
+
+### Creating a Client with Custom Timeouts
+
+```rust
+use std::time::Duration;
+use aws_utils_sqs::make_client_with_timeout;
+
+#[tokio::main]
+async fn main() {
+    // Create a client with custom timeout settings
+    let client = make_client_with_timeout(
+        None,
+        Some(Duration::from_secs(5)),      // 5 second connect timeout
+        Some(Duration::from_secs(30)),     // 30 second operation timeout
+        Some(Duration::from_secs(25)),     // 25 second operation attempt timeout
+        Some(Duration::from_secs(20)),     // 20 second read timeout
+    ).await;
+}
+```
+
+### Using TimeoutConfig
+
+```rust
+use aws_config::timeout::{TimeoutConfig, TimeoutConfigBuilder};
+use aws_utils_sqs::make_client;
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() {
+    // Build custom timeout configuration
+    let timeout_config = TimeoutConfigBuilder::new()
+        .connect_timeout(Duration::from_secs(10))
+        .operation_timeout(Duration::from_secs(120))
+        .build();
+    
+    // Create client with custom timeout configuration
+    let client = make_client(None, Some(timeout_config)).await;
 }
 ```
 

@@ -1,6 +1,6 @@
 [package]
 name = "aws_utils_sqs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "AWS SQS utilities for Rust"
 homepage = "https://github.com/UniqueVision/utilities.aws-utils"
