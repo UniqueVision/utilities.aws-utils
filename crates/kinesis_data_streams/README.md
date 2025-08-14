@@ -26,12 +26,12 @@ kinesis_data_streams = "0.1.0"
 ### Basic Usage
 
 ```rust
-use kinesis_data_streams::{make_client, kinesis_data_stream};
+use kinesis_data_streams::{make_client_with_timeout_default, kinesis_data_stream};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a Kinesis client
-    let client = make_client(None).await;
+    // Create a Kinesis client with default timeout settings
+    let client = make_client_with_timeout_default(None).await;
     
     // Put a single record
     let result = kinesis_data_streams::add_record(
@@ -50,11 +50,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Batch Processing with RecordsBuilder
 
 ```rust
-use kinesis_data_streams::{make_client, kinesis_data_stream, RecordsBuilder};
+use kinesis_data_streams::{make_client_with_timeout_default, kinesis_data_stream, RecordsBuilder};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = make_client(None).await;
+    let client = make_client_with_timeout_default(None).await;
     
     // Build a batch of records
     let mut builder = RecordsBuilder::new();
@@ -75,14 +75,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Custom Endpoint (for testing)
 
 ```rust
-use kinesis_data_streams::make_client;
+use kinesis_data_streams::make_client_with_timeout_default;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Use a custom endpoint (e.g., for LocalStack)
-    let client = make_client(Some("http://localhost:4566".to_string())).await;
+    let client = make_client_with_timeout_default(Some("http://localhost:4566".to_string())).await;
     
     // Your Kinesis operations here...
+    
+    Ok(())
+}
+```
+
+### Timeout Configuration
+
+```rust
+use kinesis_data_streams::{make_client, make_client_with_timeout, make_client_with_timeout_default};
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Use default timeout settings (recommended)
+    let client = make_client_with_timeout_default(None).await;
+    
+    // Use custom timeout settings
+    let client = make_client_with_timeout(
+        None, // endpoint_url
+        Some(Duration::from_secs(3100)), // connect_timeout
+        Some(Duration::from_secs(60)),   // operation_timeout
+        Some(Duration::from_secs(55)),   // operation_attempt_timeout
+        Some(Duration::from_secs(50)),   // read_timeout
+    ).await;
+    
+    // Use legacy client without timeout configuration
+    let client = make_client(None, None).await;
     
     Ok(())
 }
@@ -92,7 +119,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Functions
 
-- `make_client(endpoint_url: Option<String>)` - Creates a Kinesis client with optional custom endpoint
+- `make_client_with_timeout_default(endpoint_url: Option<String>)` - Creates a Kinesis client with default timeout settings
+- `make_client_with_timeout(endpoint_url, connect_timeout, operation_timeout, operation_attempt_timeout, read_timeout)` - Creates a Kinesis client with custom timeout settings
+- `make_client(endpoint_url: Option<String>, timeout_config: Option<TimeoutConfig>)` - Creates a Kinesis client with optional custom endpoint and timeout configuration
 - `kinesis_data_streams::add_record(client, stream_name, partition_key, data)` - Puts a single record
 - `kinesis_data_streams::add_records(client, stream_name, records)` - Puts multiple records in batch
 
@@ -138,11 +167,11 @@ Error variants:
 #### Error Handling Example
 
 ```rust
-use kinesis_data_streams::{make_client, kinesis_data_stream, RecordsBuilder, error::Error};
+use kinesis_data_streams::{make_client_with_timeout_default, kinesis_data_stream, RecordsBuilder, error::Error};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = make_client(None).await;
+    let client = make_client_with_timeout_default(None).await;
     
     match kinesis_data_streams::add_record(&client, "my-stream", "key", "data").await {
         Ok(output) => println!("Success: {}", output.sequence_number()),

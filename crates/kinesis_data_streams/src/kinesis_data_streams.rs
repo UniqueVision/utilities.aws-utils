@@ -61,7 +61,7 @@ mod tests {
             .create_async()
             .await;
 
-        let client = make_client(Some(server.url())).await;
+        let client = make_client(Some(server.url()), None).await;
         let result = add_record(
             &client,
             "test-stream",
@@ -95,7 +95,7 @@ mod tests {
             .create_async()
             .await;
 
-        let client = make_client(Some(server.url())).await;
+        let client = make_client(Some(server.url()), None).await;
         let result = add_record(
             &client,
             "test-stream",
@@ -134,7 +134,7 @@ mod tests {
             .create_async()
             .await;
 
-        let client = make_client(Some(server.url())).await;
+        let client = make_client(Some(server.url()), None).await;
 
         let records = vec![
             PutRecordsRequestEntry::builder()
@@ -185,7 +185,7 @@ mod tests {
             .create_async()
             .await;
 
-        let client = make_client(Some(server.url())).await;
+        let client = make_client(Some(server.url()), None).await;
 
         let records = vec![
             PutRecordsRequestEntry::builder()
@@ -227,7 +227,7 @@ mod tests {
             .create_async()
             .await;
 
-        let client = make_client(Some(server.url())).await;
+        let client = make_client(Some(server.url()), None).await;
 
         let records = vec![
             PutRecordsRequestEntry::builder()
