@@ -27,18 +27,43 @@ use aws_utils_lambda;
 
 #[tokio::main]
 async fn main() {
-    // Create client with default configuration
-    let client = aws_utils_lambda::make_client(None).await;
+    // Create client with default timeout configuration
+    let client = aws_utils_lambda::make_client_with_timeout_default(None).await;
     
     // Create client with custom endpoint (e.g., for LocalStack)
-    let client = aws_utils_lambda::make_client(Some("http://localhost:4566".to_string())).await;
+    let client = aws_utils_lambda::make_client_with_timeout_default(Some("http://localhost:4566".to_string())).await;
 }
 ```
 
-The `make_client` function automatically handles AWS credentials:
+The client creation functions automatically handle AWS credentials:
 - Uses existing AWS environment variables if set
 - Sets dummy values for local development if not configured
 - Defaults to `us-west-2` region if `AWS_REGION` is not set
+
+### Timeout Configuration
+
+```rust
+use aws_utils_lambda::{make_client, make_client_with_timeout, make_client_with_timeout_default};
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() {
+    // Use default timeout settings (recommended)
+    let client = make_client_with_timeout_default(None).await;
+    
+    // Use custom timeout settings
+    let client = make_client_with_timeout(
+        None, // endpoint_url
+        Some(Duration::from_secs(3100)), // connect_timeout
+        Some(Duration::from_secs(60)),   // operation_timeout
+        Some(Duration::from_secs(55)),   // operation_attempt_timeout
+        Some(Duration::from_secs(50)),   // read_timeout
+    ).await;
+    
+    // Use legacy client without timeout configuration
+    let client = make_client(None, None).await;
+}
+```
 
 ### Invoking Lambda Functions
 
@@ -48,7 +73,7 @@ use aws_sdk_lambda::primitives::Blob;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = aws_utils_lambda::make_client(None).await;
+    let client = aws_utils_lambda::make_client_with_timeout_default(None).await;
     
     // Simple invocation
     let result = lambda::invoke(
@@ -98,6 +123,18 @@ match lambda::invoke(&client, Some("my-function"), None, None, None, None, None)
     }
 }
 ```
+
+## API Reference
+
+### Client Creation Functions
+
+- `make_client_with_timeout_default(endpoint_url: Option<String>)` - Creates a Lambda client with default timeout settings
+- `make_client_with_timeout(endpoint_url, connect_timeout, operation_timeout, operation_attempt_timeout, read_timeout)` - Creates a Lambda client with custom timeout settings
+- `make_client(endpoint_url: Option<String>, timeout_config: Option<TimeoutConfig>)` - Creates a Lambda client with optional custom endpoint and timeout configuration
+
+### Lambda Functions
+
+- `lambda::invoke(client, function_name, client_context, invocation_type, log_type, payload, qualifier)` - Invokes a Lambda function with comprehensive parameter support
 
 ## Re-exports
 
