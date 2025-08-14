@@ -24,12 +24,12 @@ aws_utils_secretsmanager = "0.1.0"
 ### Basic Example
 
 ```rust
-use aws_utils_secretsmanager::{make_client, secretsmanager::get_secret_value};
+use aws_utils_secretsmanager::{make_client_with_timeout_default, secretsmanager::get_secret_value};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create Secrets Manager client
-    let client = make_client(None).await;
+    // Create Secrets Manager client with default timeout configuration
+    let client = make_client_with_timeout_default(None).await;
     
     // Get secret value
     let secret = get_secret_value(&client, "my-secret-name").await?;
@@ -42,14 +42,63 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Using Custom Endpoint
 
 ```rust
-use aws_utils_secretsmanager::{make_client, secretsmanager::get_secret_value};
+use aws_utils_secretsmanager::{make_client_with_timeout_default, secretsmanager::get_secret_value};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create client with custom endpoint (e.g., LocalStack)
-    let client = make_client(Some("http://localhost:4566".to_string())).await;
+    let client = make_client_with_timeout_default(Some("http://localhost:4566".to_string())).await;
     
     let secret = get_secret_value(&client, "test-secret").await?;
+    println!("Secret value: {}", secret);
+    
+    Ok(())
+}
+```
+
+### Using Custom Timeout Configuration
+
+```rust
+use std::time::Duration;
+use aws_utils_secretsmanager::{make_client_with_timeout, secretsmanager::get_secret_value};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create client with custom timeout settings
+    let client = make_client_with_timeout(
+        None,
+        Some(Duration::from_secs(5)),      // 5 second connect timeout
+        Some(Duration::from_secs(30)),     // 30 second operation timeout
+        Some(Duration::from_secs(25)),     // 25 second operation attempt timeout
+        Some(Duration::from_secs(20)),     // 20 second read timeout
+    ).await;
+    
+    let secret = get_secret_value(&client, "test-secret").await?;
+    println!("Secret value: {}", secret);
+    
+    Ok(())
+}
+```
+
+### Using with TimeoutConfig
+
+```rust
+use aws_config::timeout::{TimeoutConfig, TimeoutConfigBuilder};
+use aws_utils_secretsmanager::{make_client, secretsmanager::get_secret_value};
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Build custom timeout configuration
+    let timeout_config = TimeoutConfigBuilder::new()
+        .connect_timeout(Duration::from_secs(10))
+        .operation_timeout(Duration::from_secs(120))
+        .build();
+    
+    // Create client with custom timeout configuration
+    let client = make_client(None, Some(timeout_config)).await;
+    
+    let secret = get_secret_value(&client, "long-running-secret").await?;
     println!("Secret value: {}", secret);
     
     Ok(())
@@ -59,11 +108,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Getting Raw Secret Output with Versioning
 
 ```rust
-use aws_utils_secretsmanager::{make_client, secretsmanager::get_secret_value_raw};
+use aws_utils_secretsmanager::{make_client_with_timeout_default, secretsmanager::get_secret_value_raw};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = make_client(None).await;
+    let client = make_client_with_timeout_default(None).await;
     
     // Get specific version of secret
     let output = get_secret_value_raw(
@@ -88,11 +137,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Getting Latest Secret Version
 
 ```rust
-use aws_utils_secretsmanager::{make_client, secretsmanager::get_secret_value_raw};
+use aws_utils_secretsmanager::{make_client_with_timeout_default, secretsmanager::get_secret_value_raw};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = make_client(None).await;
+    let client = make_client_with_timeout_default(None).await;
     
     // Get current version (default behavior)
     let output = get_secret_value_raw(
@@ -112,11 +161,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Functions
 
-#### `make_client(endpoint_url: Option<String>) -> Client`
+#### `make_client_with_timeout_default(endpoint_url: Option<String>) -> Client`
 
-Creates an AWS Secrets Manager client with optional custom endpoint URL.
+Creates an AWS Secrets Manager client with default timeout configuration.
 
 - `endpoint_url`: Optional custom endpoint URL for testing (e.g., LocalStack)
+- Returns: Configured AWS Secrets Manager Client with default timeouts
+- Default timeouts:
+  - Connect timeout: 3100 seconds
+  - Operation timeout: 60 seconds
+  - Operation attempt timeout: 55 seconds
+  - Read timeout: 50 seconds
+
+#### `make_client_with_timeout(endpoint_url: Option<String>, connect_timeout: Option<Duration>, operation_timeout: Option<Duration>, operation_attempt_timeout: Option<Duration>, read_timeout: Option<Duration>) -> Client`
+
+Creates an AWS Secrets Manager client with custom timeout configuration.
+
+- `endpoint_url`: Optional custom endpoint URL for testing (e.g., LocalStack)
+- `connect_timeout`: Optional timeout for establishing connections
+- `operation_timeout`: Optional timeout for entire operations
+- `operation_attempt_timeout`: Optional timeout for individual operation attempts
+- `read_timeout`: Optional timeout for reading responses
+- Returns: Configured AWS Secrets Manager Client with custom timeouts
+
+#### `make_client(endpoint_url: Option<String>, timeout_config: Option<TimeoutConfig>) -> Client`
+
+Creates an AWS Secrets Manager client with optional custom endpoint URL and timeout configuration.
+
+- `endpoint_url`: Optional custom endpoint URL for testing (e.g., LocalStack)
+- `timeout_config`: Optional timeout configuration
 - Returns: Configured AWS Secrets Manager Client
 
 #### `get_secret_value(client: &Client, secret_id: &str) -> Result<String, Error>`
@@ -201,12 +274,12 @@ This makes it easy to use in testing environments without requiring real AWS cre
 ### Database Credentials
 
 ```rust
-use aws_utils_secretsmanager::{make_client, secretsmanager::get_secret_value};
+use aws_utils_secretsmanager::{make_client_with_timeout_default, secretsmanager::get_secret_value};
 use serde_json::Value;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = make_client(None).await;
+    let client = make_client_with_timeout_default(None).await;
     let secret_json = get_secret_value(&client, "prod/db/credentials").await?;
     
     let credentials: Value = serde_json::from_str(&secret_json)?;
@@ -223,11 +296,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### API Keys
 
 ```rust
-use aws_utils_secretsmanager::{make_client, secretsmanager::get_secret_value};
+use aws_utils_secretsmanager::{make_client_with_timeout_default, secretsmanager::get_secret_value};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = make_client(None).await;
+    let client = make_client_with_timeout_default(None).await;
     let api_key = get_secret_value(&client, "prod/external-api/key").await?;
     
     // Use API key for external service calls
