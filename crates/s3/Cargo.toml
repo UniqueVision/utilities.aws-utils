@@ -1,6 +1,6 @@
 [package]
 name = "aws_utils_s3"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 description = "AWS S3 utilities for common operations like listing, uploading, downloading, and deleting objects"
 repository = "https://github.com/UniqueVision/utilities.aws-utils"
@@ -13,6 +13,7 @@ categories = ["api-bindings", "asynchronous", "web-programming"]
 
 [dependencies]
 aws-config = { version = "1.8", features = ["behavior-version-latest"] }
+aws-credential-types = "1"
 aws-sdk-s3 = "1"
 aws-smithy-types-convert = { version = "0.60.9", features = ["convert-streams"] }
 futures-util = "0.3.31"

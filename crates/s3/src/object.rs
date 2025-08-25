@@ -110,6 +110,28 @@ pub async fn put_object(
         .map_err(from_aws_sdk_error)
 }
 
+pub async fn put_object_conditional(
+    client: &Client,
+    bucket_name: impl Into<String>,
+    key: impl Into<String>,
+    body: impl Into<ByteStream>,
+    if_match: impl Into<String>,
+    content_type: Option<impl Into<String>>,
+    content_disposition: Option<impl Into<String>>,
+) -> Result<PutObjectOutput, Error> {
+    client
+        .put_object()
+        .set_bucket(Some(bucket_name.into()))
+        .set_key(Some(key.into()))
+        .set_body(Some(body.into()))
+        .set_if_match(Some(if_match.into()))
+        .set_content_type(content_type.map(Into::into))
+        .set_content_disposition(content_disposition.map(Into::into))
+        .send()
+        .await
+        .map_err(from_aws_sdk_error)
+}
+
 pub async fn put_object_from_path(
     client: &Client,
     bucket_name: impl Into<String>,
