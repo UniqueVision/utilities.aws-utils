@@ -4,7 +4,8 @@ use aws_config::{
     BehaviorVersion,
     timeout::{TimeoutConfig, TimeoutConfigBuilder},
 };
-use aws_sdk_s3::Client;
+use aws_credential_types::Credentials;
+use aws_sdk_s3::{Client, config::Region};
 
 pub mod bucket;
 pub mod error;
@@ -64,5 +65,34 @@ pub async fn make_client(
             .endpoint_url(aws_endpoint_url)
             .force_path_style(true);
     }
+    Client::from_conf(builder.build())
+}
+
+pub async fn make_client_with_credentials(
+    access_key_id: String,
+    secret_access_key: String,
+    region: String,
+    endpoint_url: Option<String>,
+    timeout_config: Option<TimeoutConfig>,
+) -> Client {
+    let credentials = Credentials::new(access_key_id, secret_access_key, None, None, "manual");
+
+    let mut config_loader = aws_config::defaults(BehaviorVersion::latest())
+        .credentials_provider(credentials)
+        .region(Region::new(region));
+
+    if let Some(timeout_config) = timeout_config {
+        config_loader = config_loader.timeout_config(timeout_config);
+    }
+
+    let config = config_loader.load().await;
+    let mut builder = aws_sdk_s3::config::Builder::from(&config);
+
+    if let Some(aws_endpoint_url) = endpoint_url {
+        builder = builder
+            .endpoint_url(aws_endpoint_url)
+            .force_path_style(true);
+    }
+
     Client::from_conf(builder.build())
 }
