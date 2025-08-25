@@ -13,6 +13,7 @@ categories = ["api-bindings", "asynchronous", "web-programming"]
 
 [dependencies]
 aws-config = { version = "1.8", features = ["behavior-version-latest"] }
+aws-credential-types = "1"
 aws-sdk-s3 = "1"
 aws-smithy-types-convert = { version = "0.60.9", features = ["convert-streams"] }
 futures-util = "0.3.31"
