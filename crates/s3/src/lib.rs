@@ -45,15 +45,6 @@ pub async fn make_client(
     endpoint_url: Option<String>,
     timeout_config: Option<TimeoutConfig>,
 ) -> Client {
-    if std::env::var("AWS_ACCESS_KEY_ID").is_err() {
-        unsafe { std::env::set_var("AWS_ACCESS_KEY_ID", "dummy_access_key") };
-    }
-    if std::env::var("AWS_SECRET_ACCESS_KEY").is_err() {
-        unsafe { std::env::set_var("AWS_SECRET_ACCESS_KEY", "dummy_secret_key") };
-    }
-    if std::env::var("AWS_REGION").is_err() {
-        unsafe { std::env::set_var("AWS_REGION", "us-west-2") };
-    }
     let mut config_loader = aws_config::defaults(BehaviorVersion::latest());
     if let Some(timeout_config) = timeout_config {
         config_loader = config_loader.timeout_config(timeout_config);
