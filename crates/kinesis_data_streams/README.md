@@ -229,15 +229,15 @@ The library includes comprehensive unit tests with mocking capabilities using `m
 
 ## Configuration
 
-### Environment Variables
+### Authentication
 
-The library automatically sets dummy AWS credentials for testing if not provided:
+The client uses the AWS SDK's default credential chain for authentication:
 
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `AWS_REGION`
-
-For production use, configure these through your preferred AWS credential provider.
+- Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`)
+- ECS task role (for Fargate/ECS)
+- EC2 instance profile
+- AWS credentials file
+- Other configured credential providers
 
 ## Dependencies
 

@@ -35,10 +35,12 @@ async fn main() {
 }
 ```
 
-The client creation functions automatically handle AWS credentials:
-- Uses existing AWS environment variables if set
-- Sets dummy values for local development if not configured
-- Defaults to `us-west-2` region if `AWS_REGION` is not set
+The client uses the AWS SDK's default credential chain for authentication:
+- Environment variables if set
+- ECS task role (for Fargate/ECS)
+- EC2 instance profile
+- AWS credentials file
+- Other configured credential providers
 
 ### Timeout Configuration
 

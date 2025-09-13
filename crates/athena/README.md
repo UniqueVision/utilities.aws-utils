@@ -139,12 +139,14 @@ match query::start_query_execution(&client, query_string, None, None, None, None
 }
 ```
 
-## Environment Variables
+## Authentication
 
-The client automatically sets default values for AWS credentials and region if not provided:
-- `AWS_ACCESS_KEY_ID`: Defaults to "dummy_access_key"
-- `AWS_SECRET_ACCESS_KEY`: Defaults to "dummy_secret_key"
-- `AWS_REGION`: Defaults to "us-west-2"
+The client uses the AWS SDK's default credential chain for authentication:
+- Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`)
+- ECS task role (for Fargate/ECS)
+- EC2 instance profile
+- AWS credentials file
+- Other configured credential providers
 
 ## License
 

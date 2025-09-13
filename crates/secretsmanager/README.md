@@ -8,7 +8,7 @@ AWS Secrets Manager utilities for retrieving secret values from AWS Secrets Mana
 - Support for secret versioning with version ID and version stage
 - Custom error handling with detailed error types
 - Support for custom AWS endpoints (useful for testing with LocalStack)
-- Automatic fallback to dummy credentials for testing environments
+- Support for AWS SDK's default credential chain
 
 ## Installation
 
@@ -259,15 +259,15 @@ RUST_LOG=info cargo test -- --nocapture
 cargo test test_get_secret_value -- --nocapture
 ```
 
-## Environment Variables
+## Authentication
 
-The crate automatically sets dummy AWS credentials if they're not present:
+The client uses the AWS SDK's default credential chain for authentication:
 
-- `AWS_ACCESS_KEY_ID`: Set to "dummy_access_key" if not present
-- `AWS_SECRET_ACCESS_KEY`: Set to "dummy_secret_key" if not present  
-- `AWS_REGION`: Set to "us-west-2" if not present
-
-This makes it easy to use in testing environments without requiring real AWS credentials.
+- Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`)
+- ECS task role (for Fargate/ECS)
+- EC2 instance profile
+- AWS credentials file
+- Other configured credential providers
 
 ## Use Cases
 

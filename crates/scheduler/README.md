@@ -331,10 +331,10 @@ match scheduler::create_schedule(
 
 ## Important Notes
 
-- All client creation functions (`make_client`, `make_client_with_timeout`, `make_client_with_timeout_default`) set dummy AWS credentials if they're not already present in the environment. This is useful for local development with tools like LocalStack.
 - The `make_client_with_timeout_default` function provides reasonable default timeout values (connect: 3100s, operation: 60s, operation attempt: 55s, read: 50s) suitable for most use cases.
 - All schedule names must be unique within a schedule group.
 - The IAM role must have the necessary permissions to invoke the target.
+- The client uses the AWS SDK's default credential chain, supporting IAM roles, environment variables, and other standard authentication methods.
 
 ## License
 
