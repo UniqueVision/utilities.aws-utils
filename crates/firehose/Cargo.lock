@@ -418,7 +418,7 @@ dependencies = [
 
 [[package]]
 name = "aws_utils_firehose"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "aws-config",
  "aws-sdk-firehose",
