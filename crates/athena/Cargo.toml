@@ -1,6 +1,6 @@
 [package]
 name = "aws_utils_athena"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2024"
 description = "AWS Athena client utilities for Rust with query execution, streaming results, and comprehensive error handling"
 readme = "README.md"
@@ -13,7 +13,7 @@ categories = ["api-bindings", "asynchronous", "database"]
 
 [dependencies]
 aws-config = { version = "1.8", features = ["behavior-version-latest"] }
-aws-sdk-athena = "1.84"
+aws-sdk-athena = "1"
 aws-smithy-types-convert = { version = "0.60", features = ["convert-streams"] }
 chrono = "0.4"
 futures-util = "0.3"
