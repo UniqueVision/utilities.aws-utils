@@ -1,6 +1,6 @@
 [package]
 name = "aws_utils_sqs"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 description = "AWS SQS utilities for Rust"
 homepage = "https://github.com/UniqueVision/utilities.aws-utils"
@@ -11,7 +11,7 @@ keywords = ["aws", "sqs", "queue", "messaging"]
 categories = ["api-bindings", "asynchronous"]
 
 [dependencies]
-aws-config = { version = "1.8", features = ["behavior-version-latest"] }
+aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-sqs = "1"
 thiserror = "2"
 serde_json = "1"

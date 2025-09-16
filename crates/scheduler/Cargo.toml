@@ -1,6 +1,6 @@
 [package]
 name = "aws_utils_scheduler"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 description = "A Rust wrapper for AWS EventBridge Scheduler with type-safe builders for schedule expressions"
 documentation = "https://docs.rs/aws_utils_scheduler"
