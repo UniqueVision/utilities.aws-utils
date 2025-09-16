@@ -221,12 +221,12 @@ The crate provides a custom `Error` type that wraps AWS SDK errors and includes 
 
 ## Environment Variables
 
-The client creation automatically sets default values for AWS credentials if not present:
-- `AWS_ACCESS_KEY_ID` - Defaults to "dummy_access_key"
-- `AWS_SECRET_ACCESS_KEY` - Defaults to "dummy_secret_key"
-- `AWS_REGION` - Defaults to "us-west-2"
-
-These defaults are useful for local development with DynamoDB Local.
+The client uses the AWS SDK's default credential chain, which checks for credentials in the following order:
+- Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`)
+- ECS task role (for Fargate/ECS)
+- EC2 instance profile
+- AWS credentials file
+- Other configured credential providers
 
 ## License
 
