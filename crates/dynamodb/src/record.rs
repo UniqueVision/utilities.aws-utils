@@ -17,11 +17,19 @@ pub async fn get_item_raw(
     client: &Client,
     table_name: impl Into<String>,
     key: HashMap<String, AttributeValue>,
+    consistent_read: Option<bool>,
+    expression_attribute_names: Option<HashMap<String, String>>,
+    projection_expression: Option<impl Into<String>>,
+    attributes_to_get: Option<Vec<impl Into<String>>>,
 ) -> Result<GetItemOutput, Error> {
     client
         .get_item()
         .table_name(table_name)
         .set_key(Some(key))
+        .set_consistent_read(consistent_read)
+        .set_expression_attribute_names(expression_attribute_names)
+        .set_projection_expression(projection_expression.map(Into::into))
+        .set_attributes_to_get(attributes_to_get.map(|v| v.into_iter().map(Into::into).collect()))
         .send()
         .await
         .map_err(from_aws_sdk_error)
@@ -31,8 +39,21 @@ pub async fn get_item(
     client: &Client,
     table_name: impl Into<String>,
     key: HashMap<String, AttributeValue>,
+    consistent_read: Option<bool>,
+    expression_attribute_names: Option<HashMap<String, String>>,
+    projection_expression: Option<impl Into<String>>,
+    attributes_to_get: Option<Vec<impl Into<String>>>,
 ) -> Result<HashMap<String, AttributeValue>, Error> {
-    let output = get_item_raw(client, table_name, key).await?;
+    let output = get_item_raw(
+        client,
+        table_name,
+        key,
+        consistent_read,
+        expression_attribute_names,
+        projection_expression,
+        attributes_to_get,
+    )
+    .await?;
     if let Some(item) = output.item {
         Ok(item)
     } else {
@@ -109,6 +130,7 @@ pub async fn delete_item(
         .map_err(from_aws_sdk_error)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn scan_stream(
     client: &Client,
     table_name: impl Into<String>,
@@ -116,6 +138,9 @@ pub fn scan_stream(
     filter_expression: Option<impl Into<String>>,
     expression_attribute_names: Option<HashMap<String, String>>,
     expression_attribute_values: Option<HashMap<String, AttributeValue>>,
+    consistent_read: Option<bool>,
+    projection_expression: Option<impl Into<String>>,
+    attributes_to_get: Option<Vec<impl Into<String>>>,
 ) -> impl Stream<Item = Result<HashMap<String, AttributeValue>, Error>> {
     client
         .scan()
@@ -124,6 +149,9 @@ pub fn scan_stream(
         .set_filter_expression(filter_expression.map(Into::into))
         .set_expression_attribute_names(expression_attribute_names)
         .set_expression_attribute_values(expression_attribute_values)
+        .set_consistent_read(consistent_read)
+        .set_projection_expression(projection_expression.map(Into::into))
+        .set_attributes_to_get(attributes_to_get.map(|v| v.into_iter().map(Into::into).collect()))
         .into_paginator()
         .items()
         .send()
@@ -131,6 +159,7 @@ pub fn scan_stream(
         .map_err(from_aws_sdk_error)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn scan_all(
     client: &Client,
     table_name: impl Into<String>,
@@ -138,6 +167,9 @@ pub async fn scan_all(
     filter_expression: Option<impl Into<String>>,
     expression_attribute_names: Option<HashMap<String, String>>,
     expression_attribute_values: Option<HashMap<String, AttributeValue>>,
+    consistent_read: Option<bool>,
+    projection_expression: Option<impl Into<String>>,
+    attributes_to_get: Option<Vec<impl Into<String>>>,
 ) -> Result<Vec<HashMap<String, AttributeValue>>, Error> {
     let stream = scan_stream(
         client,
@@ -146,6 +178,9 @@ pub async fn scan_all(
         filter_expression,
         expression_attribute_names,
         expression_attribute_values,
+        consistent_read,
+        projection_expression,
+        attributes_to_get,
     );
     let mut items = Vec::new();
     futures_util::pin_mut!(stream);
@@ -155,6 +190,7 @@ pub async fn scan_all(
     Ok(items)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn query_stream(
     client: &Client,
     table_name: impl Into<String>,
@@ -163,6 +199,9 @@ pub fn query_stream(
     filter_expression: Option<impl Into<String>>,
     expression_attribute_names: Option<HashMap<String, String>>,
     expression_attribute_values: Option<HashMap<String, AttributeValue>>,
+    consistent_read: Option<bool>,
+    projection_expression: Option<impl Into<String>>,
+    attributes_to_get: Option<Vec<impl Into<String>>>,
 ) -> impl Stream<Item = Result<HashMap<String, AttributeValue>, Error>> {
     client
         .query()
@@ -172,6 +211,9 @@ pub fn query_stream(
         .set_filter_expression(filter_expression.map(Into::into))
         .set_expression_attribute_names(expression_attribute_names)
         .set_expression_attribute_values(expression_attribute_values)
+        .set_consistent_read(consistent_read)
+        .set_projection_expression(projection_expression.map(Into::into))
+        .set_attributes_to_get(attributes_to_get.map(|v| v.into_iter().map(Into::into).collect()))
         .into_paginator()
         .items()
         .send()
@@ -179,6 +221,7 @@ pub fn query_stream(
         .map_err(from_aws_sdk_error)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn query_all(
     client: &Client,
     table_name: impl Into<String>,
@@ -187,6 +230,9 @@ pub async fn query_all(
     filter_expression: Option<impl Into<String>>,
     expression_attribute_names: Option<HashMap<String, String>>,
     expression_attribute_values: Option<HashMap<String, AttributeValue>>,
+    consistent_read: Option<bool>,
+    projection_expression: Option<impl Into<String>>,
+    attributes_to_get: Option<Vec<impl Into<String>>>,
 ) -> Result<Vec<HashMap<String, AttributeValue>>, Error> {
     let stream = query_stream(
         client,
@@ -196,6 +242,9 @@ pub async fn query_all(
         filter_expression,
         expression_attribute_names,
         expression_attribute_values,
+        consistent_read,
+        projection_expression,
+        attributes_to_get,
     );
     let mut items = Vec::new();
     futures_util::pin_mut!(stream);
