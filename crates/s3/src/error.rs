@@ -42,4 +42,12 @@ impl Error {
             false
         }
     }
+
+    pub fn is_not_found(&self) -> bool {
+        if let Error::AwsSdk(e) = self {
+            matches!(**e, aws_sdk_s3::Error::NotFound(_))
+        } else {
+            false
+        }
+    }
 }

@@ -69,7 +69,7 @@ pub async fn is_exists(
     match res {
         Ok(_) => Ok(true),
         Err(e) => {
-            if e.is_no_such_key() || e.is_no_such_bucket() {
+            if e.is_no_such_key() || e.is_no_such_bucket() || e.is_not_found() {
                 Ok(false)
             } else {
                 Err(e)
