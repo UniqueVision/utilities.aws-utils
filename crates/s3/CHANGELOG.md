@@ -1,5 +1,8 @@
 # Changes
 
+## v0.3.1 (2025/10/03)
+* Fix s3 is_exists
+
 ## v0.3.0 (2025/09/17)
 * **BREAKING CHANGE**: Removed automatic dummy credential injection from make_client functions
 * Fixed authentication issues in ECS/Fargate environments where IAM task roles should be used
