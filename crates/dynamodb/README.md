@@ -55,7 +55,7 @@ let client = make_client(Some("http://localhost:8000".to_string()), None).await;
 ### Record Operations
 
 ```rust
-use aws_utils_dynamodb::record::{get_item, put_item, update_item, delete_item, scan_all, query_all};
+use aws_utils_dynamodb::record::{get_item, put_item, update_item, delete_item, scan_all, query_all, query};
 use aws_sdk_dynamodb::types::{AttributeValue, ReturnValue};
 use std::collections::HashMap;
 
@@ -92,7 +92,7 @@ let output = delete_item(&client, "my_table", key, None, None, None, None).await
 // Scan all items
 let items = scan_all(&client, "my_table", None, None, None, None).await?;
 
-// Query items
+// Query items (all)
 let items = query_all(
     &client,
     "my_table",
@@ -101,6 +101,21 @@ let items = query_all(
     None,
     None,
     Some(HashMap::from([(":id".to_string(), AttributeValue::S("123".to_string()))]))
+).await?;
+
+// Query items (with limit, no pagination)
+let items = query(
+    &client,
+    "my_table",
+    None,          // index_name
+    Some("id = :id"),
+    None,          // filter_expression
+    None,          // expression_attribute_names
+    Some(HashMap::from([(":id".to_string(), AttributeValue::S("123".to_string()))])),
+    None,          // consistent_read
+    None::<String>, // projection_expression
+    None::<Vec<String>>, // attributes_to_get
+    Some(10),      // limit
 ).await?;
 ```
 
