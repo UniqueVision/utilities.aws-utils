@@ -1,5 +1,9 @@
 # Changes
 
+## v0.5.0 (2025/12/12)
+
+* Add `query` function for single query with limit (no pagination)
+
 ## v0.4.0 (2025/09/19)
 * **BREAKING CHANGE**: query and scan add consistent_read, expression_attribute_names, projection_expression, attributes_to_get
 

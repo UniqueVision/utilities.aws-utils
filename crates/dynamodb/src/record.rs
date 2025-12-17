@@ -190,6 +190,41 @@ pub async fn scan_all(
     Ok(items)
 }
 
+/// ページネーションなしの単発クエリ。limit で取得件数を制限可能。
+#[allow(clippy::too_many_arguments)]
+pub async fn query(
+    client: &Client,
+    table_name: impl Into<String>,
+    index_name: Option<impl Into<String>>,
+    key_condition_expression: Option<impl Into<String>>,
+    filter_expression: Option<impl Into<String>>,
+    expression_attribute_names: Option<HashMap<String, String>>,
+    expression_attribute_values: Option<HashMap<String, AttributeValue>>,
+    consistent_read: Option<bool>,
+    projection_expression: Option<impl Into<String>>,
+    attributes_to_get: Option<Vec<impl Into<String>>>,
+    limit: Option<i32>,
+) -> Result<Vec<HashMap<String, AttributeValue>>, Error> {
+    let output = client
+        .query()
+        .table_name(table_name)
+        .set_index_name(index_name.map(Into::into))
+        .set_key_condition_expression(key_condition_expression.map(Into::into))
+        .set_filter_expression(filter_expression.map(Into::into))
+        .set_expression_attribute_names(expression_attribute_names)
+        .set_expression_attribute_values(expression_attribute_values)
+        .set_consistent_read(consistent_read)
+        .set_projection_expression(projection_expression.map(Into::into))
+        .set_attributes_to_get(attributes_to_get.map(|v| v.into_iter().map(Into::into).collect()))
+        .set_limit(limit)
+        .send()
+        .await
+        .map_err(from_aws_sdk_error)?;
+    // クエリ結果が 0 件の時も正常値を返す
+    Ok(output.items.unwrap_or_default()) 
+}
+
+
 #[allow(clippy::too_many_arguments)]
 pub fn query_stream(
     client: &Client,
