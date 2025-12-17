@@ -16,7 +16,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-aws_utils_athena = "0.1.0"
+aws_utils_athena = "0.3.0"
 ```
 
 ## Usage
@@ -33,9 +33,10 @@ let client = aws_utils_athena::make_client_with_timeout_default(None).await;
 use std::time::Duration;
 let client = aws_utils_athena::make_client_with_timeout(
     None, // endpoint_url
-    Duration::from_secs(60), // operation_timeout
-    Duration::from_secs(55), // operation_attempt_timeout
-    Duration::from_secs(50), // connect_timeout
+    Some(Duration::from_secs(50)), // connect_timeout
+    Some(Duration::from_secs(60)), // operation_timeout
+    Some(Duration::from_secs(55)), // operation_attempt_timeout
+    Some(Duration::from_secs(45)), // read_timeout
 ).await;
 ```
 
@@ -124,8 +125,9 @@ match query::start_query_execution(&client, query_string, None, None, None, None
     Err(Error::Invalid(msg)) => {
         // Handle invalid input
     }
-    Err(Error::QueryFailed) => {
+    Err(Error::QueryFailed(query_execution)) => {
         // Handle query failure
+        // query_execution contains the failed QueryExecution details
     }
     Err(Error::QueryCancelled) => {
         // Handle query cancellation
