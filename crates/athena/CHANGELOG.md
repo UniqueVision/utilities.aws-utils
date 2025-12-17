@@ -1,5 +1,8 @@
 ## Changes
 
+### v0.3.0 (2025/12/17)
+* add QueryFailed Error with QueryExecution
+
 ### v0.2.0 (2025/09/17)
 * **BREAKING CHANGE**: Removed automatic dummy credential injection from make_client functions
 * Fixed authentication issues in ECS/Fargate environments where IAM task roles should be used

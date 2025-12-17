@@ -1,6 +1,6 @@
 [package]
 name = "aws_utils_athena"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 description = "AWS Athena client utilities for Rust with query execution, streaming results, and comprehensive error handling"
 readme = "README.md"

@@ -1,3 +1,4 @@
+use aws_sdk_athena::types::QueryExecution;
 use thiserror::Error;
 use tokio::time::error::Elapsed;
 
@@ -15,8 +16,8 @@ pub enum Error {
     #[error("QueryCancelled")]
     QueryCancelled,
 
-    #[error("QueryFailed")]
-    QueryFailed,
+    #[error("QueryFailed: {0:?}")]
+    QueryFailed(Box<QueryExecution>),
 
     #[error("Timeout {0}")]
     Timeout(#[from] Elapsed),
