@@ -51,7 +51,7 @@ pub async fn get_query_execution(
 pub fn get_query_results_stream(
     client: &Client,
     execution_id: Option<impl Into<String>>,
-) -> impl TryStream<Ok = ResultSet, Error = Error> {
+) -> impl TryStream<Ok = ResultSet, Error = Error> + Unpin {
     client
         .get_query_results()
         .set_query_execution_id(execution_id.map(Into::into))
@@ -59,9 +59,9 @@ pub fn get_query_results_stream(
         .send()
         .into_stream_03x()
         .map_err(from_aws_sdk_error)
-        .and_then(|s| async move {
+        .and_then(|s| Box::pin(async move {
             s.result_set()
                 .ok_or_else(|| Error::Invalid("result_set is None".to_string()))
                 .cloned()
-        })
+        }))
 }
