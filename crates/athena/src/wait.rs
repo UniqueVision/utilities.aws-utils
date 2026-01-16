@@ -62,7 +62,7 @@ fn inner_check_query_succeeded(
                 match state {
                     QueryExecutionState::Succeeded => Ok(true),
                     QueryExecutionState::Cancelled => Err(Error::QueryCancelled),
-                    QueryExecutionState::Failed => Err(Error::QueryFailed),
+                    QueryExecutionState::Failed => Err(Error::QueryFailed(Box::new(query_execution.clone()))),
                     QueryExecutionState::Queued => Ok(false),
                     QueryExecutionState::Running => Ok(false),
                     _ => Ok(false),
