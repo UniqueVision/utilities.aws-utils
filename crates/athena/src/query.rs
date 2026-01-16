@@ -59,9 +59,11 @@ pub fn get_query_results_stream(
         .send()
         .into_stream_03x()
         .map_err(from_aws_sdk_error)
-        .and_then(|s| Box::pin(async move {
-            s.result_set()
-                .ok_or_else(|| Error::Invalid("result_set is None".to_string()))
-                .cloned()
-        }))
+        .and_then(|s| {
+            Box::pin(async move {
+                s.result_set()
+                    .ok_or_else(|| Error::Invalid("result_set is None".to_string()))
+                    .cloned()
+            })
+        })
 }

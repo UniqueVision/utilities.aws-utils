@@ -1,5 +1,8 @@
 ## Changes
 
+### v0.3.1 (2026/01/16)
+* Fix get_query_results_stream. Add Unpin
+
 ### v0.3.0 (2025/12/17)
 * add QueryFailed Error with QueryExecution
 
