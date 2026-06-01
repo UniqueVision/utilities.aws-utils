@@ -481,7 +481,7 @@ dependencies = [
 
 [[package]]
 name = "aws_utils_dynamodb"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "aws-config",
  "aws-sdk-dynamodb",
