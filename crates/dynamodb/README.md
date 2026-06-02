@@ -46,10 +46,110 @@ let client = make_client_with_timeout_default(
 ).await;
 
 // Create client without timeout configuration (legacy)
-let client = make_client(None, None).await;
+let client = make_client(None, None, None).await;
 
 // Create client with custom endpoint and no timeout (legacy)
-let client = make_client(Some("http://localhost:8000".to_string()), None).await;
+let client = make_client(Some("http://localhost:8000".to_string()), None, None).await;
+```
+
+### Logging AWS Communication
+
+`make_client` accepts an optional [`SharedInterceptor`]. By passing an interceptor that
+implements `aws_sdk_dynamodb::config::Intercept`, you can run custom logic — such as
+logging — every time the client communicates with AWS.
+
+The interceptor below logs each request, response, and operation result. It uses the
+[`tracing`](https://crates.io/crates/tracing) crate, which is also what the AWS SDK uses
+internally.
+
+```rust
+use aws_utils_dynamodb::make_client;
+use aws_sdk_dynamodb::config::{
+    ConfigBag, Intercept, RuntimeComponents, SharedInterceptor,
+    interceptors::{
+        AfterDeserializationInterceptorContextRef, BeforeDeserializationInterceptorContextRef,
+        BeforeTransmitInterceptorContextRef,
+    },
+};
+
+type BoxError = Box<dyn std::error::Error + Send + Sync + 'static>;
+
+#[derive(Debug, Clone)]
+struct LoggingInterceptor;
+
+impl Intercept for LoggingInterceptor {
+    fn name(&self) -> &'static str {
+        "DynamoDbLoggingInterceptor"
+    }
+
+    // Called just before each HTTP request is sent (once per retry attempt).
+    fn read_before_transmit(
+        &self,
+        context: &BeforeTransmitInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        let request = context.request();
+        tracing::info!(
+            method = %request.method(),
+            uri = %request.uri(),
+            "DynamoDB -> AWS request"
+        );
+        Ok(())
+    }
+
+    // Called right after each HTTP response is received.
+    fn read_before_deserialization(
+        &self,
+        context: &BeforeDeserializationInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        let response = context.response();
+        tracing::info!(status = %response.status(), "AWS -> DynamoDB response");
+        Ok(())
+    }
+
+    // Called once when the operation completes (after retries), with success or error.
+    fn read_after_deserialization(
+        &self,
+        context: &AfterDeserializationInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        match context.output_or_error() {
+            Ok(_) => tracing::info!("DynamoDB operation succeeded"),
+            Err(err) => tracing::warn!(error = %err, "DynamoDB operation failed"),
+        }
+        Ok(())
+    }
+}
+
+# async fn run() {
+// Pass the interceptor as the third argument.
+let client = make_client(None, None, Some(SharedInterceptor::new(LoggingInterceptor))).await;
+# }
+```
+
+`tracing` does not emit anything until a subscriber is initialized. Set one up once in your
+application (for example with `tracing-subscriber`) and control verbosity with `RUST_LOG`:
+
+```rust
+// Add `tracing-subscriber` to your dependencies.
+tracing_subscriber::fmt()
+    .with_env_filter(
+        tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| "info".into()),
+    )
+    .init();
+```
+
+Example output (`RUST_LOG=info`):
+
+```text
+INFO DynamoDbLoggingInterceptor: DynamoDB -> AWS request method=POST uri=https://dynamodb.ap-northeast-1.amazonaws.com/
+INFO DynamoDbLoggingInterceptor: AWS -> DynamoDB response status=200
+INFO DynamoDbLoggingInterceptor: DynamoDB operation succeeded
 ```
 
 ### Record Operations

@@ -80,7 +80,7 @@ mod tests {
             .create_async()
             .await;
 
-        crate::make_client(Some(mock_url), None).await
+        crate::make_client(Some(mock_url), None, None).await
     }
 
     #[tokio::test]

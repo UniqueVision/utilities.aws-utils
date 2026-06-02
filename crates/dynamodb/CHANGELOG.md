@@ -1,5 +1,10 @@
 # Changes
 
+## v0.6.0 (2026/06/02)
+
+* Add `interceptor` in make_client for logging etc
+* Update crates
+
 ## v0.5.0 (2025/12/12)
 
 * Add `query` function for single query with limit (no pagination)
