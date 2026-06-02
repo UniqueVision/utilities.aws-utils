@@ -7,7 +7,7 @@ A utility crate for AWS S3 client operations.
 ### Client Setup
 - `make_client_with_timeout_default` - Create an S3 client with default timeout settings
 - `make_client_with_timeout` - Create an S3 client with custom timeout settings
-- `make_client` - Create an S3 client with optional endpoint URL and timeout configuration
+- `make_client` - Create an S3 client with optional endpoint URL, timeout configuration, and interceptor (e.g. for logging)
 
 ### Bucket Operations
 - `bucket::create_bucket` - Create a new S3 bucket
@@ -133,10 +133,110 @@ let client = make_client_with_timeout_default(
 ).await;
 
 // Use legacy client without timeout configuration
-let client = make_client(None, None).await;
+let client = make_client(None, None, None).await;
 
 // Use custom endpoint and no timeout (legacy)
-let client = make_client(Some("http://localhost:4566".to_string()), None).await;
+let client = make_client(Some("http://localhost:4566".to_string()), None, None).await;
+```
+
+## Logging AWS Communication
+
+`make_client` (and `make_client_with_credentials`) accepts an optional [`SharedInterceptor`].
+By passing an interceptor that implements `aws_sdk_s3::config::Intercept`, you can run custom
+logic — such as logging — every time the client communicates with AWS.
+
+The interceptor below logs each request, response, and operation result. It uses the
+[`tracing`](https://crates.io/crates/tracing) crate, which is also what the AWS SDK uses
+internally.
+
+```rust
+use aws_utils_s3::make_client;
+use aws_sdk_s3::config::{
+    ConfigBag, Intercept, RuntimeComponents, SharedInterceptor,
+    interceptors::{
+        AfterDeserializationInterceptorContextRef, BeforeDeserializationInterceptorContextRef,
+        BeforeTransmitInterceptorContextRef,
+    },
+};
+
+type BoxError = Box<dyn std::error::Error + Send + Sync + 'static>;
+
+#[derive(Debug, Clone)]
+struct LoggingInterceptor;
+
+impl Intercept for LoggingInterceptor {
+    fn name(&self) -> &'static str {
+        "S3LoggingInterceptor"
+    }
+
+    // Called just before each HTTP request is sent (once per retry attempt).
+    fn read_before_transmit(
+        &self,
+        context: &BeforeTransmitInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        let request = context.request();
+        tracing::info!(
+            method = %request.method(),
+            uri = %request.uri(),
+            "S3 -> AWS request"
+        );
+        Ok(())
+    }
+
+    // Called right after each HTTP response is received.
+    fn read_before_deserialization(
+        &self,
+        context: &BeforeDeserializationInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        let response = context.response();
+        tracing::info!(status = %response.status(), "AWS -> S3 response");
+        Ok(())
+    }
+
+    // Called once when the operation completes (after retries), with success or error.
+    fn read_after_deserialization(
+        &self,
+        context: &AfterDeserializationInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        match context.output_or_error() {
+            Ok(_) => tracing::info!("S3 operation succeeded"),
+            Err(err) => tracing::warn!(error = %err, "S3 operation failed"),
+        }
+        Ok(())
+    }
+}
+
+# async fn run() {
+// Pass the interceptor as the third argument.
+let client = make_client(None, None, Some(SharedInterceptor::new(LoggingInterceptor))).await;
+# }
+```
+
+`tracing` does not emit anything until a subscriber is initialized. Set one up once in your
+application (for example with `tracing-subscriber`) and control verbosity with `RUST_LOG`:
+
+```rust
+// Add `tracing-subscriber` to your dependencies.
+tracing_subscriber::fmt()
+    .with_env_filter(
+        tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| "info".into()),
+    )
+    .init();
+```
+
+Example output (`RUST_LOG=info`):
+
+```text
+INFO S3LoggingInterceptor: S3 -> AWS request method=GET uri=https://my-bucket.s3.ap-northeast-1.amazonaws.com/key.txt
+INFO S3LoggingInterceptor: AWS -> S3 response status=200
+INFO S3LoggingInterceptor: S3 operation succeeded
 ```
 
 ## Error Handling

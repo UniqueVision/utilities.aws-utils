@@ -1,5 +1,9 @@
 # Changes
 
+## v0.4.0 (2026/06/02)
+* Add `interceptor` in make_client / make_client_with_credentials for logging etc
+* Update crates
+
 ## v0.3.1 (2025/10/03)
 * Fix s3 is_exists
 

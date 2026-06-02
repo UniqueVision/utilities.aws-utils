@@ -5,7 +5,10 @@ use aws_config::{
     timeout::{TimeoutConfig, TimeoutConfigBuilder},
 };
 use aws_credential_types::Credentials;
-use aws_sdk_s3::{Client, config::Region};
+use aws_sdk_s3::{
+    Client,
+    config::{Region, SharedInterceptor},
+};
 
 pub mod bucket;
 pub mod error;
@@ -38,12 +41,13 @@ pub async fn make_client_with_timeout(
         .set_operation_timeout(operation_timeout)
         .set_operation_attempt_timeout(operation_attempt_timeout)
         .set_read_timeout(read_timeout);
-    make_client(endpoint_url, Some(timeout_config.build())).await
+    make_client(endpoint_url, Some(timeout_config.build()), None).await
 }
 
 pub async fn make_client(
     endpoint_url: Option<String>,
     timeout_config: Option<TimeoutConfig>,
+    interceptor: Option<SharedInterceptor>,
 ) -> Client {
     let mut config_loader = aws_config::defaults(BehaviorVersion::latest());
     if let Some(timeout_config) = timeout_config {
@@ -56,6 +60,9 @@ pub async fn make_client(
             .endpoint_url(aws_endpoint_url)
             .force_path_style(true);
     }
+    if let Some(interceptor) = interceptor {
+        builder.push_interceptor(interceptor);
+    }
     Client::from_conf(builder.build())
 }
 
@@ -65,6 +72,7 @@ pub async fn make_client_with_credentials(
     region: String,
     endpoint_url: Option<String>,
     timeout_config: Option<TimeoutConfig>,
+    interceptor: Option<SharedInterceptor>,
 ) -> Client {
     let credentials = Credentials::new(access_key_id, secret_access_key, None, None, "manual");
 
@@ -83,6 +91,10 @@ pub async fn make_client_with_credentials(
         builder = builder
             .endpoint_url(aws_endpoint_url)
             .force_path_style(true);
+    }
+
+    if let Some(interceptor) = interceptor {
+        builder.push_interceptor(interceptor);
     }
 
     Client::from_conf(builder.build())
