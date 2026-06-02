@@ -8,7 +8,7 @@ use aws_config::{
     timeout::{TimeoutConfig, TimeoutConfigBuilder},
 };
 pub use aws_sdk_athena;
-use aws_sdk_athena::Client;
+use aws_sdk_athena::{Client, config::SharedInterceptor};
 
 pub async fn make_client_with_timeout_default(endpoint_url: Option<String>) -> Client {
     make_client_with_timeout(
@@ -34,12 +34,13 @@ pub async fn make_client_with_timeout(
         .set_operation_timeout(operation_timeout)
         .set_operation_attempt_timeout(operation_attempt_timeout)
         .set_read_timeout(read_timeout);
-    make_client(endpoint_url, Some(timeout_config.build())).await
+    make_client(endpoint_url, Some(timeout_config.build()), None).await
 }
 
 pub async fn make_client(
     endpoint_url: Option<String>,
     timeout_config: Option<TimeoutConfig>,
+    interceptor: Option<SharedInterceptor>,
 ) -> Client {
     let mut config_loader = aws_config::defaults(BehaviorVersion::latest());
     if let Some(timeout_config) = timeout_config {
@@ -49,6 +50,9 @@ pub async fn make_client(
     let mut builder = aws_sdk_athena::config::Builder::from(&config);
     if let Some(aws_endpoint_url) = endpoint_url {
         builder = builder.endpoint_url(aws_endpoint_url)
+    }
+    if let Some(interceptor) = interceptor {
+        builder.push_interceptor(interceptor);
     }
     Client::from_conf(builder.build())
 }

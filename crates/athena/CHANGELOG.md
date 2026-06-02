@@ -1,5 +1,9 @@
 ## Changes
 
+### v0.4.0 (2026/06/02)
+* Add `interceptor` in make_client for logging etc
+* Update crates
+
 ### v0.3.2 (2026/01/26)
 * Fix get_query_results_stream. Box::pin to std::future::ready.
 
