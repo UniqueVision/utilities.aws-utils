@@ -8,6 +8,7 @@ use aws_config::{
     timeout::{TimeoutConfig, TimeoutConfigBuilder},
 };
 pub use aws_sdk_scheduler;
+use aws_sdk_scheduler::config::SharedInterceptor;
 
 pub async fn make_client_with_timeout_default(
     endpoint_url: Option<String>,
@@ -35,12 +36,13 @@ pub async fn make_client_with_timeout(
         .set_operation_timeout(operation_timeout)
         .set_operation_attempt_timeout(operation_attempt_timeout)
         .set_read_timeout(read_timeout);
-    make_client(endpoint_url, Some(timeout_config.build())).await
+    make_client(endpoint_url, Some(timeout_config.build()), None).await
 }
 
 pub async fn make_client(
     endpoint_url: Option<String>,
     timeout_config: Option<TimeoutConfig>,
+    interceptor: Option<SharedInterceptor>,
 ) -> aws_sdk_scheduler::Client {
     let mut config_loader = aws_config::defaults(BehaviorVersion::latest());
     if let Some(timeout_config) = timeout_config {
@@ -50,6 +52,9 @@ pub async fn make_client(
     let mut builder = aws_sdk_scheduler::config::Builder::from(&config);
     if let Some(aws_endpoint_url) = endpoint_url {
         builder = builder.endpoint_url(aws_endpoint_url)
+    }
+    if let Some(interceptor) = interceptor {
+        builder.push_interceptor(interceptor);
     }
     aws_sdk_scheduler::Client::from_conf(builder.build())
 }

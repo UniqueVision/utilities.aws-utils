@@ -1,5 +1,9 @@
 ## Changes
 
+### v0.4.0 (2026/06/02)
+* Add `interceptor` in make_client for logging etc
+* Update crates
+
 ### v0.3.0 (2025/09/17)
 * **BREAKING CHANGE**: Removed automatic dummy credential injection from make_client functions
 * Fixed authentication issues in ECS/Fargate environments where IAM task roles should be used

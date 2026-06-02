@@ -109,10 +109,110 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ).await;
     
     // Use legacy client without timeout configuration
-    let client = make_client(None, None).await;
+    let client = make_client(None, None, None).await;
     
     Ok(())
 }
+```
+
+### Logging AWS Communication
+
+`make_client` accepts an optional [`SharedInterceptor`]. By passing an interceptor that
+implements `aws_sdk_kinesis::config::Intercept`, you can run custom logic — such as
+logging — every time the client communicates with AWS.
+
+The interceptor below logs each request, response, and operation result. It uses the
+[`tracing`](https://crates.io/crates/tracing) crate, which is also what the AWS SDK uses
+internally.
+
+```rust
+use kinesis_data_streams::make_client;
+use aws_sdk_kinesis::config::{
+    ConfigBag, Intercept, RuntimeComponents, SharedInterceptor,
+    interceptors::{
+        AfterDeserializationInterceptorContextRef, BeforeDeserializationInterceptorContextRef,
+        BeforeTransmitInterceptorContextRef,
+    },
+};
+
+type BoxError = Box<dyn std::error::Error + Send + Sync + 'static>;
+
+#[derive(Debug, Clone)]
+struct LoggingInterceptor;
+
+impl Intercept for LoggingInterceptor {
+    fn name(&self) -> &'static str {
+        "KinesisLoggingInterceptor"
+    }
+
+    // Called just before each HTTP request is sent (once per retry attempt).
+    fn read_before_transmit(
+        &self,
+        context: &BeforeTransmitInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        let request = context.request();
+        tracing::info!(
+            method = %request.method(),
+            uri = %request.uri(),
+            "Kinesis -> AWS request"
+        );
+        Ok(())
+    }
+
+    // Called right after each HTTP response is received.
+    fn read_before_deserialization(
+        &self,
+        context: &BeforeDeserializationInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        let response = context.response();
+        tracing::info!(status = %response.status(), "AWS -> Kinesis response");
+        Ok(())
+    }
+
+    // Called once when the operation completes (after retries), with success or error.
+    fn read_after_deserialization(
+        &self,
+        context: &AfterDeserializationInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        match context.output_or_error() {
+            Ok(_) => tracing::info!("Kinesis operation succeeded"),
+            Err(err) => tracing::warn!(error = %err, "Kinesis operation failed"),
+        }
+        Ok(())
+    }
+}
+
+# async fn run() {
+// Pass the interceptor as the third argument.
+let client = make_client(None, None, Some(SharedInterceptor::new(LoggingInterceptor))).await;
+# }
+```
+
+`tracing` does not emit anything until a subscriber is initialized. Set one up once in your
+application (for example with `tracing-subscriber`) and control verbosity with `RUST_LOG`:
+
+```rust
+// Add `tracing-subscriber` to your dependencies.
+tracing_subscriber::fmt()
+    .with_env_filter(
+        tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| "info".into()),
+    )
+    .init();
+```
+
+Example output (`RUST_LOG=info`):
+
+```text
+INFO KinesisLoggingInterceptor: Kinesis -> AWS request method=POST uri=https://kinesis.ap-northeast-1.amazonaws.com/
+INFO KinesisLoggingInterceptor: AWS -> Kinesis response status=200
+INFO KinesisLoggingInterceptor: Kinesis operation succeeded
 ```
 
 ## API Reference
@@ -121,7 +221,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 - `make_client_with_timeout_default(endpoint_url: Option<String>)` - Creates a Kinesis client with default timeout settings
 - `make_client_with_timeout(endpoint_url, connect_timeout, operation_timeout, operation_attempt_timeout, read_timeout)` - Creates a Kinesis client with custom timeout settings
-- `make_client(endpoint_url: Option<String>, timeout_config: Option<TimeoutConfig>)` - Creates a Kinesis client with optional custom endpoint and timeout configuration
+- `make_client(endpoint_url: Option<String>, timeout_config: Option<TimeoutConfig>, interceptor: Option<SharedInterceptor>)` - Creates a Kinesis client with optional custom endpoint, timeout configuration, and interceptor (e.g. for logging)
 - `kinesis_data_streams::add_record(client, stream_name, partition_key, data)` - Puts a single record
 - `kinesis_data_streams::add_records(client, stream_name, records)` - Puts multiple records in batch
 
