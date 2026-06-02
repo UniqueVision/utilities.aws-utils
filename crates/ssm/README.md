@@ -118,13 +118,113 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build();
     
     // Create client with custom timeout configuration
-    let client = make_client(None, Some(timeout_config)).await;
+    let client = make_client(None, Some(timeout_config), None).await;
     
     let value = get_parameter(&client, "/my/parameter").await?;
     println!("Parameter value: {}", value);
     
     Ok(())
 }
+```
+
+### Logging AWS Communication
+
+`make_client` accepts an optional [`SharedInterceptor`]. By passing an interceptor that
+implements `aws_sdk_ssm::config::Intercept`, you can run custom logic — such as logging —
+every time the client communicates with AWS.
+
+The interceptor below logs each request, response, and operation result. It uses the
+[`tracing`](https://crates.io/crates/tracing) crate, which is also what the AWS SDK uses
+internally.
+
+```rust
+use aws_utils_ssm::make_client;
+use aws_sdk_ssm::config::{
+    ConfigBag, Intercept, RuntimeComponents, SharedInterceptor,
+    interceptors::{
+        AfterDeserializationInterceptorContextRef, BeforeDeserializationInterceptorContextRef,
+        BeforeTransmitInterceptorContextRef,
+    },
+};
+
+type BoxError = Box<dyn std::error::Error + Send + Sync + 'static>;
+
+#[derive(Debug, Clone)]
+struct LoggingInterceptor;
+
+impl Intercept for LoggingInterceptor {
+    fn name(&self) -> &'static str {
+        "SsmLoggingInterceptor"
+    }
+
+    // Called just before each HTTP request is sent (once per retry attempt).
+    fn read_before_transmit(
+        &self,
+        context: &BeforeTransmitInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        let request = context.request();
+        tracing::info!(
+            method = %request.method(),
+            uri = %request.uri(),
+            "SSM -> AWS request"
+        );
+        Ok(())
+    }
+
+    // Called right after each HTTP response is received.
+    fn read_before_deserialization(
+        &self,
+        context: &BeforeDeserializationInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        let response = context.response();
+        tracing::info!(status = %response.status(), "AWS -> SSM response");
+        Ok(())
+    }
+
+    // Called once when the operation completes (after retries), with success or error.
+    fn read_after_deserialization(
+        &self,
+        context: &AfterDeserializationInterceptorContextRef<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        match context.output_or_error() {
+            Ok(_) => tracing::info!("SSM operation succeeded"),
+            Err(err) => tracing::warn!(error = %err, "SSM operation failed"),
+        }
+        Ok(())
+    }
+}
+
+# async fn run() {
+// Pass the interceptor as the third argument.
+let client = make_client(None, None, Some(SharedInterceptor::new(LoggingInterceptor))).await;
+# }
+```
+
+`tracing` does not emit anything until a subscriber is initialized. Set one up once in your
+application (for example with `tracing-subscriber`) and control verbosity with `RUST_LOG`:
+
+```rust
+// Add `tracing-subscriber` to your dependencies.
+tracing_subscriber::fmt()
+    .with_env_filter(
+        tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| "info".into()),
+    )
+    .init();
+```
+
+Example output (`RUST_LOG=info`):
+
+```text
+INFO SsmLoggingInterceptor: SSM -> AWS request method=POST uri=https://ssm.ap-northeast-1.amazonaws.com/
+INFO SsmLoggingInterceptor: AWS -> SSM response status=200
+INFO SsmLoggingInterceptor: SSM operation succeeded
 ```
 
 ## API Reference
@@ -154,12 +254,13 @@ Creates an AWS SSM client with custom timeout configuration.
 - `read_timeout`: Optional timeout for reading responses
 - Returns: Configured AWS SSM Client with custom timeouts
 
-#### `make_client(endpoint_url: Option<String>, timeout_config: Option<TimeoutConfig>) -> Client`
+#### `make_client(endpoint_url: Option<String>, timeout_config: Option<TimeoutConfig>, interceptor: Option<SharedInterceptor>) -> Client`
 
-Creates an AWS SSM client with optional custom endpoint URL and timeout configuration.
+Creates an AWS SSM client with optional custom endpoint URL, timeout configuration, and interceptor.
 
 - `endpoint_url`: Optional custom endpoint URL for testing (e.g., LocalStack)
 - `timeout_config`: Optional timeout configuration
+- `interceptor`: Optional interceptor for running custom logic (e.g. logging) on every AWS communication
 - Returns: Configured AWS SSM Client
 
 #### `get_parameter(client: &Client, name: &str) -> Result<String, Error>`
