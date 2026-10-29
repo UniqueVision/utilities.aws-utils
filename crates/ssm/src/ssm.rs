@@ -7,9 +7,14 @@ pub async fn get_parameter_raw(
     name: Option<impl Into<String>>,
     with_decryption: Option<bool>,
 ) -> Result<GetParameterOutput, Error> {
+    let name: Option<String> = name.map(Into::into);
+    #[cfg(feature = "mock")]
+    if let Some(output) = name.as_deref().and_then(crate::mock::get_parameter_output) {
+        return Ok(output);
+    }
     client
         .get_parameter()
-        .set_name(name.map(Into::into))
+        .set_name(name)
         .set_with_decryption(with_decryption)
         .send()
         .await
