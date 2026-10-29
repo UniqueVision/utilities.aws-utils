@@ -44,11 +44,37 @@ mod tests {
         assert_eq!(mock_env_name("app/db-name.v1"), "SSM_MOCK_APP_DB_NAME_V1");
     }
 
+    /// 子プロセスとして実行されたことを示す環境変数
+    const CHILD_ENV: &str = "AWS_UTILS_SSM_MOCK_TEST_CHILD";
+    const CHILD_TEST: &str = "mock::tests::get_parameter_mock_child";
+
+    #[test]
+    fn test_get_parameter_mock() {
+        // 並列実行中の他テストが環境変数を読むため、set_varは未定義動作になり得る。
+        // 環境変数を渡した子プロセスでテストバイナリを再実行して検証する
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", CHILD_TEST, "--nocapture", "--test-threads=1"])
+            .env(CHILD_ENV, "1")
+            .env("SSM_MOCK_TEST_MOCK_PARAMETER", "mock-value")
+            .output()
+            .unwrap();
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            output.status.success(),
+            "child failed:\n{stdout}\n{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        // フィルタが一致せず0件で成功する事態を防ぐ
+        assert!(
+            stdout.contains("1 passed"),
+            "child test did not run:\n{stdout}"
+        );
+    }
+
     #[tokio::test]
-    async fn test_get_parameter_mock() {
-        // SAFETY: このテスト専用の環境変数のみを操作する
-        unsafe {
-            std::env::set_var("SSM_MOCK_TEST_MOCK_PARAMETER", "mock-value");
+    async fn get_parameter_mock_child() {
+        if std::env::var(CHILD_ENV).is_err() {
+            return;
         }
         let client = crate::make_client(None, None, None).await;
 
