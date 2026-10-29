@@ -1,5 +1,8 @@
 # Changes
 
+### Unreleased
+* Add mocking of parameters via `SSM_MOCK_<NAME>` environment variables
+
 ### v0.4.0 (2026/06/02)
 * Add `interceptor` in make_client for logging etc
 * Update crates

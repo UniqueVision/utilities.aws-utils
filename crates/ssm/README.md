@@ -56,6 +56,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### Mocking Parameters with Environment Variables
+
+If an environment variable named `SSM_MOCK_<NAME>` is set, `get_parameter` / `get_parameter_raw` return its value without calling AWS.
+`<NAME>` is the parameter name with the leading `/` removed, non-alphanumeric characters replaced by `_`, and uppercased.
+
+| Parameter name | Environment variable |
+|---|---|
+| `/app/db/host` | `SSM_MOCK_APP_DB_HOST` |
+| `/app/db-name.v1` | `SSM_MOCK_APP_DB_NAME_V1` |
+
+```bash
+export SSM_MOCK_APP_DB_HOST=localhost
+```
+
+```rust
+// => "localhost" (no AWS request is made)
+let value = get_parameter(&client, "/app/db/host").await?;
+```
+
+Parameters without a corresponding environment variable are fetched from AWS as usual.
+Use `aws_utils_ssm::ssm::mock_env_name` to get the variable name for a parameter.
+
 ### Getting Raw Parameter Output
 
 ```rust
