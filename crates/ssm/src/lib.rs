@@ -7,6 +7,8 @@ use aws_config::{
 use aws_sdk_ssm::{Client, config::SharedInterceptor};
 
 pub mod error;
+#[cfg(feature = "mock")]
+pub mod mock;
 pub mod ssm;
 
 pub use aws_sdk_ssm;
